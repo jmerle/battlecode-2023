@@ -73,6 +73,7 @@ repositories {
 
 dependencies {
     implementation("org.battlecode:battlecode23:$currentBattlecodeVersion")
+    implementation("org.battlecode:battlecode23:$currentBattlecodeVersion:javadoc")
     add("client", "org.battlecode:$clientName:$currentBattlecodeVersion")
 }
 
