@@ -4,8 +4,8 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
-public class Headquarter extends Robot {
-    public Headquarter(RobotController rc) {
+public class Headquarters extends Robot {
+    public Headquarters(RobotController rc) {
         super(rc, RobotType.HEADQUARTERS);
     }
 

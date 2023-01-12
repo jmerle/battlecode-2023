@@ -6,7 +6,7 @@ import camel_case.robot.Amplifier;
 import camel_case.robot.Booster;
 import camel_case.robot.Carrier;
 import camel_case.robot.Destabilizer;
-import camel_case.robot.Headquarter;
+import camel_case.robot.Headquarters;
 import camel_case.robot.Launcher;
 import camel_case.robot.Robot;
 
@@ -51,7 +51,7 @@ public class RobotPlayer {
     private static Robot createRobot(RobotController rc) {
         switch (rc.getType()) {
             case HEADQUARTERS:
-                return new Headquarter(rc);
+                return new Headquarters(rc);
             case CARRIER:
                 return new Carrier(rc);
             case LAUNCHER:
