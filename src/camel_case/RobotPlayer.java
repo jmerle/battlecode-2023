@@ -29,6 +29,7 @@ public class RobotPlayer {
 
     private static boolean performTurn(RobotController rc, Robot robot) {
         int startRound = rc.getRoundNum();
+        int startBytecodes = Clock.getBytecodeNum();
 
         try {
             robot.run();
@@ -37,8 +38,14 @@ public class RobotPlayer {
             e.printStackTrace();
         }
 
-        int usedBytecodes = (rc.getRoundNum() - startRound) * rc.getType().bytecodeLimit + Clock.getBytecodeNum();
+        int endRound = rc.getRoundNum();
+        int endBytecodes = Clock.getBytecodeNum();
         int maxBytecodes = rc.getType().bytecodeLimit;
+
+        int usedBytecodes = startRound == endRound
+                ? endBytecodes - startBytecodes
+                : (maxBytecodes - startBytecodes) + Math.max(0, endRound - startRound - 1) * maxBytecodes + endBytecodes;
+
         double bytecodePercentage = (double) usedBytecodes / (double) maxBytecodes * 100.0;
         if (bytecodePercentage >= 95) {
             String format = "High bytecode usage!\n%s/%s (%s%%)\n";
