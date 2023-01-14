@@ -3,6 +3,7 @@ package camel_case.robot;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
+import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
@@ -18,6 +19,7 @@ public abstract class Robot {
     protected int mapWidth;
     protected int mapHeight;
 
+    protected Direction[] allDirections = Direction.values();
     protected Direction[] adjacentDirections = {
             Direction.NORTH,
             Direction.EAST,
@@ -27,6 +29,12 @@ public abstract class Robot {
             Direction.SOUTHEAST,
             Direction.SOUTHWEST,
             Direction.NORTHWEST
+    };
+
+    protected ResourceType[] resourceTypes = {
+            ResourceType.ADAMANTIUM,
+            ResourceType.MANA,
+            ResourceType.ELIXIR
     };
 
     public Robot(RobotController rc, RobotType type) {

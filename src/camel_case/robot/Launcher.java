@@ -2,6 +2,7 @@ package camel_case.robot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class Launcher extends Unit {
@@ -11,6 +12,16 @@ public class Launcher extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        // TODO: Implement
+        RobotInfo attackTarget = getAttackTarget(me.actionRadiusSquared);
+        if (attackTarget != null && tryAttack(attackTarget.location)) {
+            return;
+        }
+
+        RobotInfo visibleTarget = getAttackTarget(me.visionRadiusSquared);
+        if (visibleTarget != null && tryMoveToAndAttack(visibleTarget.location)) {
+            return;
+        }
+
+        tryWander();
     }
 }

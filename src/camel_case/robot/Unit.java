@@ -4,9 +4,11 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
+import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import camel_case.util.RandomUtils;
 
 public abstract class Unit extends Robot {
     private MapLocation currentTarget;
@@ -19,11 +21,51 @@ public abstract class Unit extends Robot {
         super(rc, type);
     }
 
-    protected boolean tryMove(Direction direction) throws GameActionException {
-        if (rc.canMove(direction)) {
-            rc.move(direction);
-            rc.setIndicatorString("" + direction);
-            return true;
+    protected RobotInfo getAttackTarget(int radius) throws GameActionException {
+        RobotInfo bestTarget = null;
+        int minHealth = Integer.MAX_VALUE;
+        int maxPriority = Integer.MIN_VALUE;
+
+        for (RobotInfo robot : rc.senseNearbyRobots(radius, opponentTeam)) {
+            if (robot.type == RobotType.HEADQUARTERS) {
+                continue;
+            }
+
+            int priority = robot.getTotalAnchors() * 1000 + robot.type.damage;
+            if (robot.type == RobotType.CARRIER) {
+                int cargo = robot.getResourceAmount(ResourceType.ADAMANTIUM)
+                        + robot.getResourceAmount(ResourceType.MANA)
+                        + robot.getResourceAmount(ResourceType.ELIXIR);
+
+                priority += cargo / 5;
+            }
+
+            if (bestTarget == null || priority > maxPriority || (priority == maxPriority && robot.health < minHealth)) {
+                bestTarget = robot;
+                minHealth = robot.health;
+                maxPriority = priority;
+            }
+        }
+
+        return bestTarget;
+    }
+
+    protected boolean tryMoveToAndAttack(MapLocation location) throws GameActionException {
+        if (location == null) {
+            return false;
+        }
+
+        boolean moved = tryMoveTo(location);
+        boolean attacked = tryAttack(location);
+
+        return moved || attacked;
+    }
+
+    protected boolean tryWander() throws GameActionException {
+        for (Direction direction : RandomUtils.shuffle(adjacentDirections.clone())) {
+            if (tryMove(direction)) {
+                return true;
+            }
         }
 
         return false;
@@ -155,6 +197,10 @@ public abstract class Unit extends Robot {
             return false;
         }
 
+        if (rc.senseRobotAtLocation(location) != null) {
+            return false;
+        }
+
         MapInfo mapInfo = rc.senseMapInfo(location);
         if (!mapInfo.isPassable() || mapInfo.getCurrentDirection() != Direction.CENTER) {
             return false;
@@ -162,5 +208,23 @@ public abstract class Unit extends Robot {
 
         RobotInfo robotInfo = rc.senseRobotAtLocation(location);
         return robotInfo == null || robotInfo.type != RobotType.HEADQUARTERS;
+    }
+
+    protected boolean tryMove(Direction direction) throws GameActionException {
+        if (rc.canMove(direction)) {
+            rc.move(direction);
+            return true;
+        }
+
+        return false;
+    }
+
+    protected boolean tryAttack(MapLocation location) throws GameActionException {
+        if (rc.canAttack(location)) {
+            rc.attack(location);
+            return true;
+        }
+
+        return false;
     }
 }
