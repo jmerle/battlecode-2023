@@ -53,7 +53,10 @@ public abstract class Unit extends Robot {
                 }
 
                 Direction current = rc.senseMapInfo(location).getCurrentDirection();
-                if (current != directionTowards(location, target)) {
+                Direction requiredDirection = directionTowards(location, target);
+                if (current != requiredDirection
+                        && current != requiredDirection.rotateLeft()
+                        && current != requiredDirection.rotateRight()) {
                     continue;
                 }
 

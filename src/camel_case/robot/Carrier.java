@@ -19,7 +19,7 @@ public class Carrier extends Unit {
         }
 
         if (target == null) {
-            target = new MapLocation(29, 0);
+            target = new MapLocation(rc.getLocation().x, mapHeight - 1);
         }
 
         tryMoveTo(target);
