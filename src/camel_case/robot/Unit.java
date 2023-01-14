@@ -2,32 +2,23 @@ package camel_case.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public abstract class Unit extends Robot {
     private MapLocation currentTarget;
-
-    private boolean isBugMoving;
-    private int distanceBeforeBugMoving;
-    private boolean huggingLeftWall;
-    private MapLocation lastHuggedWall;
+    private boolean isWallFollowing;
+    private int distanceBeforeWallFollowing;
+    private boolean wallOnRight;
+    private MapLocation lastFollowedWall;
 
     public Unit(RobotController rc, RobotType type) {
         super(rc, type);
     }
 
-    protected boolean tryMove(Direction direction, boolean allowCurrent) throws GameActionException {
-        if (!rc.isMovementReady()) {
-            return false;
-        }
-
-        MapLocation target = rc.getLocation().add(direction);
-        if (!allowCurrent && rc.onTheMap(target) && rc.senseMapInfo(target).getCurrentDirection() != Direction.CENTER) {
-            return false;
-        }
-
+    protected boolean tryMove(Direction direction) throws GameActionException {
         if (rc.canMove(direction)) {
             rc.move(direction);
             return true;
@@ -43,13 +34,13 @@ public abstract class Unit extends Robot {
 
         if (!target.equals(currentTarget)) {
             currentTarget = target;
-
-            isBugMoving = false;
-            lastHuggedWall = null;
+            isWallFollowing = false;
         }
 
+        int currentDistance = rc.getLocation().distanceSquaredTo(target);
+
         for (Direction direction : adjacentDirections) {
-            MapLocation location = rc.getLocation().add(direction);
+            MapLocation location = rc.adjacentLocation(direction);
             if (!rc.onTheMap(location)) {
                 continue;
             }
@@ -59,40 +50,35 @@ public abstract class Unit extends Robot {
                 continue;
             }
 
-            if (location.add(current).distanceSquaredTo(target) >= rc.getLocation().distanceSquaredTo(target)) {
+            if (location.add(current).distanceSquaredTo(target) >= currentDistance) {
                 continue;
             }
 
-            if (tryMove(direction, true)) {
-                isBugMoving = false;
-                lastHuggedWall = null;
+            if (tryMove(direction)) {
+                isWallFollowing = false;
                 return true;
             }
         }
 
-        if (isBugMoving) {
-            if (rc.getLocation().distanceSquaredTo(currentTarget) < distanceBeforeBugMoving) {
-                if (tryMove(directionTowards(currentTarget), false)) {
-                    isBugMoving = false;
-                    lastHuggedWall = null;
-                    return true;
-                }
-            }
-        } else {
-            if (tryMove(directionTowards(currentTarget), false)) {
+        if (isWallFollowing && currentDistance < distanceBeforeWallFollowing) {
+            isWallFollowing = false;
+        }
+
+        if (!isWallFollowing) {
+            Direction forward = directionTowards(target);
+            if (isPassable(rc.adjacentLocation(forward)) && tryMove(forward)) {
                 return true;
             } else {
-                isBugMoving = true;
-                distanceBeforeBugMoving = rc.getLocation().distanceSquaredTo(currentTarget);
-
-                determineBugMoveDirection();
+                isWallFollowing = true;
+                distanceBeforeWallFollowing = currentDistance;
+                setInitialWallFollowingDirection();
             }
         }
 
-        return makeBugMove(true);
+        return followWall(true);
     }
 
-    private void determineBugMoveDirection() {
+    private void setInitialWallFollowingDirection() throws GameActionException {
         Direction forward = directionTowards(currentTarget);
 
         Direction left = forward.rotateLeft();
@@ -102,8 +88,13 @@ public abstract class Unit extends Robot {
         int rightDistance = Integer.MAX_VALUE;
 
         for (int i = 0; i < 8; i++) {
-            if (rc.canMove(left)) {
-                leftDistance = rc.getLocation().add(left).distanceSquaredTo(currentTarget);
+            MapLocation location = rc.adjacentLocation(left);
+            if (!rc.onTheMap(location)) {
+                break;
+            }
+
+            if (isPassable(location)) {
+                leftDistance = location.distanceSquaredTo(currentTarget);
                 break;
             }
 
@@ -111,8 +102,13 @@ public abstract class Unit extends Robot {
         }
 
         for (int i = 0; i < 8; i++) {
-            if (rc.canMove(right)) {
-                rightDistance = rc.getLocation().add(right).distanceSquaredTo(currentTarget);
+            MapLocation location = rc.adjacentLocation(right);
+            if (!rc.onTheMap(location)) {
+                break;
+            }
+
+            if (isPassable(location)) {
+                rightDistance = location.distanceSquaredTo(currentTarget);
                 break;
             }
 
@@ -120,38 +116,42 @@ public abstract class Unit extends Robot {
         }
 
         if (leftDistance < rightDistance) {
-            huggingLeftWall = true;
-            lastHuggedWall = rc.getLocation().add(right.rotateLeft());
+            wallOnRight = true;
+            lastFollowedWall = rc.adjacentLocation(left.rotateRight());
         } else {
-            huggingLeftWall = false;
-            lastHuggedWall = rc.getLocation().add(left.rotateRight());
+            wallOnRight = false;
+            lastFollowedWall = rc.adjacentLocation(right.rotateLeft());
         }
     }
 
-    private boolean makeBugMove(boolean firstCall) throws GameActionException {
-        Direction currentDirection = directionTowards(lastHuggedWall);
+    private boolean followWall(boolean canRotate) throws GameActionException {
+        Direction direction = directionTowards(lastFollowedWall);
 
         for (int i = 0; i < 8; i++) {
-            if (huggingLeftWall) {
-                currentDirection = currentDirection.rotateRight();
-            } else {
-                currentDirection = currentDirection.rotateLeft();
+            direction = wallOnRight ? direction.rotateLeft() : direction.rotateRight();
+            MapLocation location = rc.adjacentLocation(direction);
+
+            if (canRotate && !rc.onTheMap(location)) {
+                wallOnRight = !wallOnRight;
+                return followWall(false);
             }
 
-            MapLocation newLocation = rc.getLocation().add(currentDirection);
-
-            if (firstCall && !rc.onTheMap(newLocation)) {
-                huggingLeftWall = !huggingLeftWall;
-                return makeBugMove(false);
-            }
-
-            if (tryMove(currentDirection, false)) {
+            if (isPassable(location) && tryMove(direction)) {
                 return true;
-            } else {
-                lastHuggedWall = rc.getLocation().add(currentDirection);
             }
+
+            lastFollowedWall = location;
         }
 
         return false;
+    }
+
+    private boolean isPassable(MapLocation location) throws GameActionException {
+        if (!rc.onTheMap(location)) {
+            return false;
+        }
+
+        MapInfo mapInfo = rc.senseMapInfo(location);
+        return mapInfo.isPassable() && mapInfo.getCurrentDirection() == Direction.CENTER;
     }
 }
