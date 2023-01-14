@@ -1,4 +1,4 @@
-package v01.robot;
+package camel_case_v01.robot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;

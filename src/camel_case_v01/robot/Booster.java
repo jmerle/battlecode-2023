@@ -1,12 +1,12 @@
-package v01.robot;
+package camel_case_v01.robot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
-public class Amplifier extends Unit {
-    public Amplifier(RobotController rc) {
-        super(rc, RobotType.AMPLIFIER);
+public class Booster extends Unit {
+    public Booster(RobotController rc) {
+        super(rc, RobotType.BOOSTER);
     }
 
     @Override
