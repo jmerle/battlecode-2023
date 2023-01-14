@@ -6,7 +6,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public class Carrier extends Unit {
-    private boolean reachedTarget = false;
+    private MapLocation target;
 
     public Carrier(RobotController rc) {
         super(rc, RobotType.CARRIER);
@@ -14,17 +14,12 @@ public class Carrier extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        if (reachedTarget) {
+        if (rc.getLocation().equals(target)) {
             return;
         }
 
-        MapLocation target = new MapLocation(29, 0);
-
-        MapLocation myLocation = rc.getLocation();
-        if (myLocation.equals(target)) {
-            System.out.println("Reached target in round " + rc.getRoundNum() + "!");
-            reachedTarget = true;
-            return;
+        if (target == null) {
+            target = new MapLocation(29, 0);
         }
 
         tryMoveTo(target);

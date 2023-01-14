@@ -21,7 +21,7 @@ public class Headquarters extends Robot {
         }
 
         RobotType type = RobotType.CARRIER;
-        MapLocation location = rc.getLocation().add(Direction.NORTHWEST);
+        MapLocation location = rc.getLocation().add(Direction.SOUTH);
 
         if (rc.canBuildRobot(type, location)) {
             rc.buildRobot(type, location);

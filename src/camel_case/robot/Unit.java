@@ -5,6 +5,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public abstract class Unit extends Robot {
@@ -21,6 +22,7 @@ public abstract class Unit extends Robot {
     protected boolean tryMove(Direction direction) throws GameActionException {
         if (rc.canMove(direction)) {
             rc.move(direction);
+            rc.setIndicatorString("" + direction);
             return true;
         }
 
@@ -39,35 +41,34 @@ public abstract class Unit extends Robot {
 
         int currentDistance = rc.getLocation().distanceSquaredTo(target);
 
-        for (Direction direction : adjacentDirections) {
-            MapLocation location = rc.adjacentLocation(direction);
-            if (!rc.onTheMap(location)) {
-                continue;
-            }
-
-            Direction current = rc.senseMapInfo(location).getCurrentDirection();
-            if (current == Direction.CENTER) {
-                continue;
-            }
-
-            if (location.add(current).distanceSquaredTo(target) >= currentDistance) {
-                continue;
-            }
-
-            if (tryMove(direction)) {
-                isWallFollowing = false;
-                return true;
-            }
-        }
-
         if (isWallFollowing && currentDistance < distanceBeforeWallFollowing) {
             isWallFollowing = false;
         }
 
         if (!isWallFollowing) {
+            for (Direction direction : adjacentDirections) {
+                MapLocation location = rc.adjacentLocation(direction);
+                if (!rc.onTheMap(location)) {
+                    continue;
+                }
+
+                Direction current = rc.senseMapInfo(location).getCurrentDirection();
+                if (current != directionTowards(location, target)) {
+                    continue;
+                }
+
+                if (location.add(current).distanceSquaredTo(target) >= currentDistance) {
+                    continue;
+                }
+
+                if (tryMove(direction)) {
+                    return true;
+                }
+            }
+
             Direction forward = directionTowards(target);
-            if (isPassable(rc.adjacentLocation(forward)) && tryMove(forward)) {
-                return true;
+            if (isPassable(rc.adjacentLocation(forward))) {
+                return tryMove(forward);
             } else {
                 isWallFollowing = true;
                 distanceBeforeWallFollowing = currentDistance;
@@ -152,6 +153,11 @@ public abstract class Unit extends Robot {
         }
 
         MapInfo mapInfo = rc.senseMapInfo(location);
-        return mapInfo.isPassable() && mapInfo.getCurrentDirection() == Direction.CENTER;
+        if (!mapInfo.isPassable() || mapInfo.getCurrentDirection() != Direction.CENTER) {
+            return false;
+        }
+
+        RobotInfo robotInfo = rc.senseRobotAtLocation(location);
+        return robotInfo == null || robotInfo.type != RobotType.HEADQUARTERS;
     }
 }
