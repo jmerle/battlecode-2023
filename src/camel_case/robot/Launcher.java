@@ -1,7 +1,6 @@
 package camel_case.robot;
 
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
@@ -25,8 +24,6 @@ public class Launcher extends Unit {
             return;
         }
 
-        MapLocation dangerTarget = getClosestDangerTarget();
-        rc.setIndicatorString(dangerTarget == null ? "nope" : "yes");
         if (tryMoveToAndAttack(getClosestDangerTarget())) {
             return;
         }
