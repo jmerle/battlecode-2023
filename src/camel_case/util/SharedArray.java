@@ -1,11 +1,14 @@
 package camel_case.util;
 
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 public class SharedArray {
     public static final int MAX_DANGER_TARGETS = 20;
+
+    private static final int DANGER_TARGET_OFFSET = 1;
 
     private RobotController rc;
 
@@ -20,7 +23,7 @@ public class SharedArray {
     public int getHeadquartersTurnIndex() throws GameActionException {
         int value = rc.readSharedArray(0);
 
-        int roundOffset = rc.getRoundNum() * 10;
+        int roundOffset = rc.getRoundNum() * GameConstants.MAX_STARTING_HEADQUARTERS;
         if (value < roundOffset) {
             write(0, roundOffset);
             return 0;
@@ -31,7 +34,7 @@ public class SharedArray {
     }
 
     public MapLocation getDangerTarget(int index) throws GameActionException {
-        int value = rc.readSharedArray(index + 1);
+        int value = rc.readSharedArray(DANGER_TARGET_OFFSET + index);
         return value > 0 ? intToLocation(value % 5_000) : null;
     }
 
@@ -39,7 +42,7 @@ public class SharedArray {
         for (int i = 0; i < SharedArray.MAX_DANGER_TARGETS; i++) {
             MapLocation dangerTarget = getDangerTarget(i);
             if (location.equals(dangerTarget)) {
-                write(i + 1, locationToInt(location) + expiration * 5_000);
+                write(DANGER_TARGET_OFFSET + i, locationToInt(location) + expiration * 5_000);
                 return;
             }
         }
@@ -47,7 +50,7 @@ public class SharedArray {
         for (int i = 0; i < SharedArray.MAX_DANGER_TARGETS; i++) {
             MapLocation dangerTarget = getDangerTarget(i);
             if (dangerTarget == null) {
-                write(i + 1, locationToInt(location) + expiration * 5_000);
+                write(DANGER_TARGET_OFFSET + i, locationToInt(location) + expiration * 5_000);
                 return;
             }
         }
@@ -55,11 +58,11 @@ public class SharedArray {
 
     public void expireDangerTargets() throws GameActionException {
         for (int i = 0; i < MAX_DANGER_TARGETS; i++) {
-            int value = rc.readSharedArray(i + 1);
+            int value = rc.readSharedArray(DANGER_TARGET_OFFSET + i);
             if (value > 5_000) {
-                write(i + 1, value - 5_000);
+                write(DANGER_TARGET_OFFSET + i, value - 5_000);
             } else if (value > 0) {
-                write(i + 1, 0);
+                write(DANGER_TARGET_OFFSET + i, 0);
             }
         }
     }
