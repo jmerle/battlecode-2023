@@ -42,7 +42,7 @@ fun getLatestBattlecodeVersion(): String {
 }
 
 fun getLatestExamplefuncsplayer(): String {
-    return get("https://raw.githubusercontent.com/battlecode/battlecode23-scaffold/main/src/examplefuncsplayer/RobotPlayer.java")
+    return get("https://raw.githubusercontent.com/battlecode/battlecode23/master/example-bots/src/main/examplefuncsplayer/RobotPlayer.java")
         .replace("System.out.", "// System.out.")
         .replace("e.printStackTrace()", "// e.printStackTrace()") + "\n"
 }
