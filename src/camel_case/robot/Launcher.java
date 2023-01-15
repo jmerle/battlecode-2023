@@ -126,10 +126,6 @@ public class Launcher extends Unit {
 
             RobotInfo robot = rc.senseRobotAtLocation(location);
             if (robot.team != opponentTeam || robot.type != RobotType.HEADQUARTERS) {
-                if (opponentHqs.size() == 1) {
-                    System.out.println(robot);
-                }
-
                 it.remove();
             }
         }
