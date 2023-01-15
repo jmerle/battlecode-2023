@@ -30,17 +30,27 @@ public class Launcher extends Unit {
 
         lookForDangerTargets();
 
-        RobotInfo attackTarget1 = getAttackTarget(me.actionRadiusSquared);
-        if (attackTarget1 != null && tryAttack(attackTarget1.location)) {
+        act();
+        act();
+    }
+
+    private void act() throws GameActionException {
+        RobotInfo attackTarget = getAttackTarget(me.actionRadiusSquared);
+        if (attackTarget != null) {
+            tryAttack(attackTarget.location);
+            tryMoveToSafety();
             return;
         }
 
         RobotInfo visibleTarget = getAttackTarget(me.visionRadiusSquared);
-        if (visibleTarget != null && tryMoveToAndAttack(visibleTarget.location)) {
+        if (visibleTarget != null) {
+            tryMoveTo(visibleTarget.location);
             return;
         }
 
-        if (tryMoveToAndAttack(getClosestDangerTarget())) {
+        MapLocation dangerTarget = getClosestDangerTarget();
+        if (dangerTarget != null) {
+            tryMoveTo(dangerTarget);
             return;
         }
 
@@ -49,11 +59,6 @@ public class Launcher extends Unit {
         }
 
         tryWander();
-
-        RobotInfo attackTarget2 = getAttackTarget(me.actionRadiusSquared);
-        if (attackTarget2 != null) {
-            tryAttack(attackTarget2.location);
-        }
     }
 
     private void findOpponentHqs() throws GameActionException {

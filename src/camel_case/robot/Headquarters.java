@@ -41,7 +41,7 @@ public class Headquarters extends Robot {
         RobotType type = RobotType.CARRIER;
         if (carriers > 5 && launchers > 5 && amplifiers == 0) {
             type = RobotType.AMPLIFIER;
-        } else if (carriers > 0 && hasResources(RobotType.LAUNCHER)) {
+        } else if (hasResources(RobotType.LAUNCHER)) {
             type = RobotType.LAUNCHER;
         }
 

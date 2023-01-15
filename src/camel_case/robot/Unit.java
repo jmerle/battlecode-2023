@@ -53,19 +53,53 @@ public abstract class Unit extends Robot {
         return bestTarget;
     }
 
-    protected boolean tryMoveToAndAttack(MapLocation location) throws GameActionException {
-        if (location == null) {
+    protected boolean tryMoveToSafety() throws GameActionException {
+        if (!rc.isMovementReady()) {
             return false;
         }
 
-        if (location.equals(currentTarget) && isStuck()) {
-            return false;
+        MapLocation myLocation = rc.getLocation();
+        RobotInfo[] opponentRobots = rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam);
+
+        Direction bestDirection = null;
+
+        int maxDistance = 0;
+        for (RobotInfo robot : opponentRobots) {
+            if (robot.type.canAttack()) {
+                maxDistance += myLocation.distanceSquaredTo(robot.location);
+            }
         }
 
-        boolean moved = tryMoveTo(location);
-        boolean attacked = tryAttack(location);
+        for (Direction direction : adjacentDirections) {
+            if (!rc.canMove(direction)) {
+                continue;
+            }
 
-        return moved || attacked;
+            MapLocation newLocation = rc.adjacentLocation(direction);
+            MapInfo mapInfo = rc.senseMapInfo(newLocation);
+            if (mapInfo.hasCloud() || mapInfo.getCurrentDirection() != Direction.CENTER) {
+                continue;
+            }
+
+            int distance = 0;
+            for (RobotInfo robot : opponentRobots) {
+                if (robot.type.canAttack()) {
+                    distance += newLocation.distanceSquaredTo(robot.location);
+                }
+            }
+
+            if (distance > maxDistance) {
+                bestDirection = direction;
+                maxDistance = distance;
+            }
+        }
+
+        if (bestDirection != null) {
+            tryMove(bestDirection);
+            return true;
+        }
+
+        return false;
     }
 
     protected boolean tryWander() throws GameActionException {

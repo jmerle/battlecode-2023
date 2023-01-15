@@ -27,7 +27,7 @@ public class Carrier extends Unit {
     @Override
     public void run() throws GameActionException {
         if (hqLocation == null) {
-            for (RobotInfo robot : rc.senseNearbyRobots(RobotType.HEADQUARTERS.actionRadiusSquared, myTeam)) {
+            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
                 if (robot.type == RobotType.HEADQUARTERS) {
                     hqLocation = robot.location;
                     break;
@@ -39,7 +39,7 @@ public class Carrier extends Unit {
 
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
             if (robot.type == RobotType.LAUNCHER) {
-                tryMoveTo(hqLocation);
+                tryMoveToSafety();
                 break;
             }
         }
