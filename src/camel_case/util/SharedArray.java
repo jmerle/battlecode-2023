@@ -8,7 +8,8 @@ import battlecode.common.RobotController;
 public class SharedArray {
     public static final int MAX_DANGER_TARGETS = 20;
 
-    private static final int DANGER_TARGET_OFFSET = 1;
+    private static final int HQ_LOCATION_OFFSET = 1;
+    private static final int DANGER_TARGET_OFFSET = HQ_LOCATION_OFFSET + GameConstants.MAX_STARTING_HEADQUARTERS;
 
     private RobotController rc;
 
@@ -31,6 +32,24 @@ public class SharedArray {
             write(0, value + 1);
             return value - roundOffset + 1;
         }
+    }
+
+    public int getHqCount() throws GameActionException {
+        for (int i = 0; i < GameConstants.MAX_STARTING_HEADQUARTERS; i++) {
+            if (rc.readSharedArray(HQ_LOCATION_OFFSET + i) == 0) {
+                return i;
+            }
+        }
+
+        return GameConstants.MAX_STARTING_HEADQUARTERS;
+    }
+
+    public MapLocation getMyHqLocation(int hqIndex) throws GameActionException {
+        return intToLocation(rc.readSharedArray(HQ_LOCATION_OFFSET + hqIndex));
+    }
+
+    public void setMyHqLocation(int hqIndex, MapLocation location) throws GameActionException {
+        write(HQ_LOCATION_OFFSET + hqIndex, locationToInt(location));
     }
 
     public MapLocation getDangerTarget(int index) throws GameActionException {

@@ -18,9 +18,6 @@ public abstract class Robot {
     protected Team myTeam;
     protected Team opponentTeam;
 
-    protected int mapWidth;
-    protected int mapHeight;
-
     protected Direction[] allDirections = Direction.values();
     protected Direction[] adjacentDirections = {
             Direction.NORTH,
@@ -48,9 +45,6 @@ public abstract class Robot {
 
         myTeam = rc.getTeam();
         opponentTeam = myTeam.opponent();
-
-        mapWidth = rc.getMapWidth();
-        mapHeight = rc.getMapHeight();
 
         sharedArray = new SharedArray(rc);
     }

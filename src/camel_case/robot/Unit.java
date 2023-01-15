@@ -11,11 +11,14 @@ import battlecode.common.RobotType;
 import camel_case.util.RandomUtils;
 
 public abstract class Unit extends Robot {
-    private MapLocation currentTarget;
+    protected MapLocation currentTarget;
     private boolean isWallFollowing;
     private int distanceBeforeWallFollowing;
     private boolean wallOnRight;
     private MapLocation lastFollowedWall;
+
+    private int initialDistanceToTarget;
+    private int turnsSpentMovingTowardsTarget;
 
     public Unit(RobotController rc, RobotType type) {
         super(rc, type);
@@ -55,6 +58,10 @@ public abstract class Unit extends Robot {
             return false;
         }
 
+        if (location.equals(currentTarget) && isStuck()) {
+            return false;
+        }
+
         boolean moved = tryMoveTo(location);
         boolean attacked = tryAttack(location);
 
@@ -71,17 +78,26 @@ public abstract class Unit extends Robot {
         return false;
     }
 
+    protected boolean isStuck() {
+        return currentTarget != null && turnsSpentMovingTowardsTarget > initialDistanceToTarget * 5;
+    }
+
     protected boolean tryMoveTo(MapLocation target) throws GameActionException {
         if (!rc.isMovementReady()) {
             return false;
         }
 
+        int currentDistance = rc.getLocation().distanceSquaredTo(target);
+
         if (!target.equals(currentTarget)) {
             currentTarget = target;
             isWallFollowing = false;
+
+            initialDistanceToTarget = currentDistance;
+            turnsSpentMovingTowardsTarget = 0;
         }
 
-        int currentDistance = rc.getLocation().distanceSquaredTo(target);
+        turnsSpentMovingTowardsTarget++;
 
         if (isWallFollowing && currentDistance < distanceBeforeWallFollowing) {
             isWallFollowing = false;

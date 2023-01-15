@@ -9,6 +9,8 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class Headquarters extends Robot {
+    private boolean isFirstRun = true;
+
     public Headquarters(RobotController rc) {
         super(rc, RobotType.HEADQUARTERS);
     }
@@ -18,6 +20,12 @@ public class Headquarters extends Robot {
         int turnIndex = sharedArray.getHeadquartersTurnIndex();
         if (turnIndex == 0) {
             sharedArray.expireDangerTargets();
+        }
+
+        if (isFirstRun) {
+            sharedArray.setMyHqLocation(turnIndex, rc.getLocation());
+
+            isFirstRun = false;
         }
 
         lookForDangerTargets();

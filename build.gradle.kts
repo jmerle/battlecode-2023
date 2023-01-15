@@ -138,6 +138,8 @@ task<JavaExec>("run") {
     jvmArgs = listOf(
         "-Dbc.server.wait-for-client=${project.findProperty("waitForClient") ?: "false"}",
         "-Dbc.server.websocket=${project.findProperty("waitForClient") ?: "false"}",
+        "-Dbc.server.validate-maps=${project.findProperty("validateMaps") ?: "true"}",
+        "-Dbc.server.alternate-order=${project.findProperty("alternateOrder") ?: "false"}",
         "-Dbc.server.mode=headless",
         "-Dbc.server.map-path=maps",
         "-Dbc.engine.robot-player-to-system-out=${project.property("outputVerbose")}",
