@@ -11,6 +11,6 @@ public class Booster extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        // TODO: Implement
+        tryWander();
     }
 }

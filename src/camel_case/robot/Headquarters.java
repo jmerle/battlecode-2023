@@ -15,13 +15,27 @@ public class Headquarters extends Robot {
 
     @Override
     public void run() throws GameActionException {
+        int turnIndex = sharedArray.getHeadquartersTurnIndex();
+        if (turnIndex == 0) {
+            sharedArray.expireDangerTargets();
+        }
+
+        lookForDangerTargets();
+
         if (!rc.isActionReady()) {
             return;
         }
 
-        RobotType type = hasResources(RobotType.LAUNCHER) && canSeeFriendlyCarrier()
-                ? RobotType.LAUNCHER
-                : RobotType.CARRIER;
+        int carriers = countFriendlies(RobotType.CARRIER);
+        int launchers = countFriendlies(RobotType.LAUNCHER);
+        int amplifiers = countFriendlies(RobotType.AMPLIFIER);
+
+        RobotType type = RobotType.CARRIER;
+        if (carriers > 5 && launchers > 5 && amplifiers == 0) {
+            type = RobotType.AMPLIFIER;
+        } else if (carriers > 0 && hasResources(RobotType.LAUNCHER)) {
+            type = RobotType.LAUNCHER;
+        }
 
         for (Direction direction : adjacentDirections) {
             if (tryBuildRobot(type, rc.adjacentLocation(direction))) {
@@ -40,14 +54,16 @@ public class Headquarters extends Robot {
         return true;
     }
 
-    private boolean canSeeFriendlyCarrier() throws GameActionException {
+    private int countFriendlies(RobotType type) throws GameActionException {
+        int count = 0;
+
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
-            if (robot.type == RobotType.CARRIER) {
-                return true;
+            if (robot.type == type) {
+                count++;
             }
         }
 
-        return false;
+        return count;
     }
 
     private boolean tryBuildRobot(RobotType type, MapLocation location) throws GameActionException {

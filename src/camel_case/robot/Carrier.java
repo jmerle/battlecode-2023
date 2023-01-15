@@ -35,6 +35,15 @@ public class Carrier extends Unit {
             }
         }
 
+        lookForDangerTargets();
+
+        for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
+            if (robot.type == RobotType.LAUNCHER) {
+                tryMoveTo(hqLocation);
+                break;
+            }
+        }
+
         ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
         act(true, resourceTarget);
     }
