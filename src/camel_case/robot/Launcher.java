@@ -28,8 +28,6 @@ public class Launcher extends Unit {
             pruneOpponentHqs();
         }
 
-        lookForDangerTargets();
-
         act();
         act();
     }
@@ -45,12 +43,6 @@ public class Launcher extends Unit {
         RobotInfo visibleTarget = getAttackTarget(me.visionRadiusSquared);
         if (visibleTarget != null) {
             tryMoveTo(visibleTarget.location);
-            return;
-        }
-
-        MapLocation dangerTarget = getClosestDangerTarget();
-        if (dangerTarget != null) {
-            tryMoveTo(dangerTarget);
             return;
         }
 

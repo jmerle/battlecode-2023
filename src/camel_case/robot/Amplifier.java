@@ -11,8 +11,6 @@ public class Amplifier extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        lookForDangerTargets();
-
         tryWander();
     }
 }

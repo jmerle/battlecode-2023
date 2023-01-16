@@ -34,8 +34,6 @@ public class Carrier extends Unit {
             }
         }
 
-        lookForDangerTargets();
-
         for (WellInfo well : rc.senseNearbyWells()) {
             MapLocation location = well.getMapLocation();
             if (wells.containsKey(location)) {
@@ -62,6 +60,9 @@ public class Carrier extends Unit {
 
     private void act() throws GameActionException {
         ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
+        if (rc.getRoundNum() < 50) {
+            resourceTarget = ResourceType.MANA;
+        }
 
         int cargo = getCargo();
         int cargoTarget = resourceTarget == ResourceType.ADAMANTIUM ? 25 : 30;

@@ -16,17 +16,12 @@ public class Headquarters extends Robot {
     @Override
     public void run() throws GameActionException {
         int turnIndex = sharedArray.getHeadquartersTurnIndex();
-        if (turnIndex == 0) {
-            sharedArray.expireDangerTargets();
-        }
 
         if (isFirstRun) {
             sharedArray.setMyHqLocation(turnIndex, rc.getLocation());
 
             isFirstRun = false;
         }
-
-        lookForDangerTargets();
 
         if (!rc.isActionReady()) {
             return;
