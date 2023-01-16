@@ -97,6 +97,8 @@ task("update") {
     group = "battlecode"
     description = "Updates to the latest Battlecode version."
 
+    finalizedBy("unpackClient")
+
     doLast {
         val latestBattlecodeVersion = getLatestBattlecodeVersion()
         if (currentBattlecodeVersion == latestBattlecodeVersion) {
