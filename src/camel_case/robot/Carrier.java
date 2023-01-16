@@ -2,6 +2,7 @@ package camel_case.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
@@ -13,8 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Carrier extends Unit {
-    private static final int CARGO_TARGET = 39;
-
     private Map<MapLocation, WellInfo> wells = new HashMap<>();
 
     private MapLocation hqLocation = null;
@@ -37,18 +36,17 @@ public class Carrier extends Unit {
 
         lookForDangerTargets();
 
-        for (Direction direction : allDirections) {
-            MapLocation location = rc.adjacentLocation(direction);
-            if (!rc.onTheMap(location)) {
-                continue;
-            }
+        for (WellInfo well : rc.senseNearbyWells()) {
+            MapLocation location = well.getMapLocation();
+            if (wells.containsKey(location)) {
+                if (wells.get(location) == null) {
+                    continue;
+                }
 
-            WellInfo well = rc.senseWell(location);
-            if (well == null) {
-                continue;
+                wells.put(location, well);
+            } else {
+                wells.put(location, isReachable(location) ? well : null);
             }
-
-            wells.put(location, well);
         }
 
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
@@ -66,8 +64,9 @@ public class Carrier extends Unit {
 
     private void act(ResourceType resourceTarget) throws GameActionException {
         int cargo = getCargo();
+        int cargoTarget = resourceTarget == ResourceType.ADAMANTIUM ? 25 : 30;
 
-        if (isCollecting && cargo == CARGO_TARGET) {
+        if (isCollecting && cargo == cargoTarget) {
             isCollecting = false;
         }
 
@@ -81,7 +80,7 @@ public class Carrier extends Unit {
 
             for (Map.Entry<MapLocation, WellInfo> entry : wells.entrySet()) {
                 WellInfo well = entry.getValue();
-                if (well.getResourceType() != resourceTarget) {
+                if (well == null || well.getResourceType() != resourceTarget) {
                     continue;
                 }
 
@@ -97,7 +96,7 @@ public class Carrier extends Unit {
             if (closestWell == null) {
                 tryWander();
             } else if (rc.getLocation().isAdjacentTo(closestWell.getMapLocation())) {
-                tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), CARGO_TARGET - cargo));
+                tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), cargoTarget - cargo));
             } else {
                 tryMoveTo(closestWell.getMapLocation());
             }
@@ -117,6 +116,25 @@ public class Carrier extends Unit {
                 tryMoveTo(hqLocation);
             }
         }
+    }
+
+    private boolean isReachable(MapLocation location) throws GameActionException {
+        MapLocation myLocation = rc.getLocation();
+
+        while (!myLocation.equals(location)) {
+            myLocation = myLocation.add(directionTowards(myLocation, location));
+
+            if (!rc.onTheMap(myLocation) || !rc.canSenseLocation(myLocation)) {
+                return false;
+            }
+
+            MapInfo mapInfo = rc.senseMapInfo(myLocation);
+            if (!mapInfo.isPassable() || mapInfo.getCurrentDirection() != Direction.CENTER) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private int getCargo() {
