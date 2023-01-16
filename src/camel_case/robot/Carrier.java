@@ -56,13 +56,13 @@ public class Carrier extends Unit {
             }
         }
 
-        ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
-
-        act(resourceTarget);
-        act(resourceTarget);
+        act();
+        act();
     }
 
-    private void act(ResourceType resourceTarget) throws GameActionException {
+    private void act() throws GameActionException {
+        ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
+
         int cargo = getCargo();
         int cargoTarget = resourceTarget == ResourceType.ADAMANTIUM ? 25 : 30;
 
