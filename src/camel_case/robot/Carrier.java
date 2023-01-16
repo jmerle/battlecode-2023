@@ -37,28 +37,6 @@ public class Carrier extends Unit {
 
         lookForDangerTargets();
 
-        for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
-            if (robot.type == RobotType.LAUNCHER) {
-                tryMoveToSafety();
-                break;
-            }
-        }
-
-        ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
-        act(true, resourceTarget);
-    }
-
-    private void act(boolean isFirstAction, ResourceType resourceTarget) throws GameActionException {
-        int cargo = getCargo();
-
-        if (isCollecting && cargo == CARGO_TARGET) {
-            isCollecting = false;
-        }
-
-        if (!isCollecting && cargo == 0) {
-            isCollecting = true;
-        }
-
         for (Direction direction : allDirections) {
             MapLocation location = rc.adjacentLocation(direction);
             if (!rc.onTheMap(location)) {
@@ -71,6 +49,30 @@ public class Carrier extends Unit {
             }
 
             wells.put(location, well);
+        }
+
+        for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
+            if (robot.type == RobotType.LAUNCHER) {
+                tryMoveToSafety();
+                break;
+            }
+        }
+
+        ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
+
+        act(resourceTarget);
+        act(resourceTarget);
+    }
+
+    private void act(ResourceType resourceTarget) throws GameActionException {
+        int cargo = getCargo();
+
+        if (isCollecting && cargo == CARGO_TARGET) {
+            isCollecting = false;
+        }
+
+        if (!isCollecting && cargo == 0) {
+            isCollecting = true;
         }
 
         if (isCollecting) {
@@ -114,10 +116,6 @@ public class Carrier extends Unit {
             } else {
                 tryMoveTo(hqLocation);
             }
-        }
-
-        if (isFirstAction) {
-            act(false, resourceTarget);
         }
     }
 

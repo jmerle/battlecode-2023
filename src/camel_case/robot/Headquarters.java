@@ -1,11 +1,9 @@
 package camel_case.robot;
 
-import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class Headquarters extends Robot {
@@ -34,21 +32,32 @@ public class Headquarters extends Robot {
             return;
         }
 
-        int carriers = countFriendlies(RobotType.CARRIER);
-        int launchers = countFriendlies(RobotType.LAUNCHER);
-        int amplifiers = countFriendlies(RobotType.AMPLIFIER);
-
-        RobotType type = RobotType.CARRIER;
-        if (carriers > 5 && launchers > 5 && amplifiers == 0) {
-            type = RobotType.AMPLIFIER;
-        } else if (hasResources(RobotType.LAUNCHER)) {
-            type = RobotType.LAUNCHER;
+        RobotType type = hasResources(RobotType.LAUNCHER) ? RobotType.LAUNCHER : RobotType.CARRIER;
+        if (!hasResources(type)) {
+            return;
         }
 
-        for (Direction direction : adjacentDirections) {
-            if (tryBuildRobot(type, rc.adjacentLocation(direction))) {
-                return;
+        boolean minimizeDistanceToCenter = type == RobotType.LAUNCHER;
+        MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+
+        MapLocation bestLocation = null;
+        int bestDistanceToCenter = minimizeDistanceToCenter ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+        for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), me.actionRadiusSquared)) {
+            if (!rc.canBuildRobot(type, location)) {
+                continue;
             }
+
+            int distanceToCenter = location.distanceSquaredTo(center);
+            if ((minimizeDistanceToCenter && distanceToCenter < bestDistanceToCenter)
+                    || (!minimizeDistanceToCenter && distanceToCenter > bestDistanceToCenter)) {
+                bestLocation = location;
+                bestDistanceToCenter = distanceToCenter;
+            }
+        }
+
+        if (bestLocation != null) {
+            tryBuildRobot(type, bestLocation);
         }
     }
 
@@ -60,18 +69,6 @@ public class Headquarters extends Robot {
         }
 
         return true;
-    }
-
-    private int countFriendlies(RobotType type) throws GameActionException {
-        int count = 0;
-
-        for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
-            if (robot.type == type) {
-                count++;
-            }
-        }
-
-        return count;
     }
 
     private boolean tryBuildRobot(RobotType type, MapLocation location) throws GameActionException {
