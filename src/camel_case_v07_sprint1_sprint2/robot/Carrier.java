@@ -1,4 +1,4 @@
-package camel_case_v07.robot;
+package camel_case_v07_sprint1_sprint2.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

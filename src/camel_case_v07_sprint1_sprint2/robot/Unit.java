@@ -1,4 +1,4 @@
-package camel_case_v07.robot;
+package camel_case_v07_sprint1_sprint2.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -8,7 +8,7 @@ import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import camel_case_v07.util.RandomUtils;
+import camel_case_v07_sprint1_sprint2.util.RandomUtils;
 
 public abstract class Unit extends Robot {
     protected MapLocation currentTarget;

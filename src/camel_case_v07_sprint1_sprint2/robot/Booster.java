@@ -1,12 +1,12 @@
-package camel_case_v07.robot;
+package camel_case_v07_sprint1_sprint2.robot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
-public class Destabilizer extends Unit {
-    public Destabilizer(RobotController rc) {
-        super(rc, RobotType.DESTABILIZER);
+public class Booster extends Unit {
+    public Booster(RobotController rc) {
+        super(rc, RobotType.BOOSTER);
     }
 
     @Override

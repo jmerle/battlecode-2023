@@ -1,4 +1,4 @@
-package camel_case_v07.util;
+package camel_case_v07_sprint1_sprint2.util;
 
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

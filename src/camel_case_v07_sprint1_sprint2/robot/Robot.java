@@ -1,4 +1,4 @@
-package camel_case_v07.robot;
+package camel_case_v07_sprint1_sprint2.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -7,7 +7,7 @@ import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import camel_case_v07.util.SharedArray;
+import camel_case_v07_sprint1_sprint2.util.SharedArray;
 
 public abstract class Robot {
     protected RobotController rc;
