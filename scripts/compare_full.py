@@ -23,7 +23,7 @@ def run_matches(player1: str, player2: str, maps: list[str], timestamp: str) -> 
         f"-PteamA={player1}",
         f"-PteamB={player2}",
         f"-Pmaps={','.join(maps)}",
-        f"-PreplayPath=replays/run-{timestamp}-%TEAM_A%-vs-%TEAM_B%.bc22"
+        f"-PreplayPath=replays/run-{timestamp}-%TEAM_A%-vs-%TEAM_B%.bc23"
     ]
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -76,11 +76,43 @@ def main() -> None:
 
     # Based on SERVER_MAPS in https://github.com/battlecode/battlecode23/blob/master/client/visualizer/src/constants.ts
     maps = [
-        # Default
+        # Default batch 1
         "AllElements",
         "DefaultMap",
         "maptestsmall",
         "SmallElements",
+
+        # Default batch 2
+        "Turtle",
+        "Dreamy",
+        "Forest",
+        "PairedProgramming",
+        "Rewind",
+
+        # Sprint 1
+        "ArtistRendition",
+        "BatSignal",
+        "BowAndArrow",
+        "Cat",
+        "Clown",
+        "Diagonal",
+        "Eyelands",
+        "Frog",
+        "Grievance",
+        "Hah",
+        "Jail",
+        "KingdomRush",
+        "Minefield",
+        "Movepls",
+        "Orbit",
+        "Pathfind",
+        "Pit",
+        "Pizza",
+        "Quiet",
+        "Rectangle",
+        "Scatter",
+        "Sun",
+        "Tacocat",
     ]
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
