@@ -6,6 +6,7 @@ import sys
 import traceback
 import websockets
 from argparse import ArgumentParser
+from battlecode.schema.Action import Action
 from battlecode.schema.Event import Event
 from battlecode.schema.EventWrapper import EventWrapper
 from battlecode.schema.MatchFooter import MatchFooter
@@ -17,23 +18,21 @@ from enum import StrEnum
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
+from typing import Optional
 
 class Outcome(StrEnum):
     MATCH_END = "match end"
     MAP_CONTROL = "map control"
+    ERROR = "error"
 
 @dataclass
 class Match:
     player1: str
     player2: str
     map: str
-    winner: str
-    rounds: int
+    winner: Optional[str]
+    rounds: Optional[int]
     outcome: Outcome
-
-    def __str__(self) -> str:
-        winner_color = "red" if self.winner == self.player1 else "blue"
-        return f"{self.winner} wins in {self.rounds} rounds as {winner_color} on {self.map} (win by {self.outcome})"
 
 @dataclass
 class State:
@@ -78,7 +77,9 @@ def print_results(state: State) -> None:
                 if match is None:
                     row.append("")
                 else:
-                    if match.winner == state.player1:
+                    if match.outcome == Outcome.ERROR:
+                        row.append("[red]Error[/red]")
+                    elif match.winner == state.player1:
                         row.append("✅")
                     else:
                         row.append("❌")
@@ -91,6 +92,9 @@ def print_results(state: State) -> None:
     player2_wins = 0
 
     for match in state.matches:
+        if match.outcome == Outcome.ERROR:
+            continue
+
         if match.winner == state.player1:
             player1_wins += 1
         else:
@@ -106,11 +110,9 @@ def print_results(state: State) -> None:
     prefix = f"[{color}]" if color is not None else ""
     suffix = "[/]" if color is not None else ""
 
-    for name, my_wins, opponent_wins in [[state.player1, player1_wins, player2_wins], [state.player2, player2_wins, player1_wins]]:
-        total_wins = my_wins + opponent_wins
-        win_rate = my_wins / total_wins if total_wins > 0 else 0
-
-        state.console.print(f"{prefix}{name} wins: [b]{my_wins}[/] ([b]{win_rate * 100:,.2f}%[/] win rate){suffix}")
+    for name, wins in [[state.player1, player1_wins], [state.player2, player2_wins]]:
+        win_rate = wins / len(state.matches) if len(state.matches) > 0 else 0
+        state.console.print(f"{prefix}{name} wins: [b]{wins}[/] ([b]{win_rate * 100:,.2f}%[/] win rate){suffix}")
 
 async def run_match(player1: str, player2: str, map: str, timestamp: str, match_index: int, state: State) -> None:
     server_port = 6175 + 1 + match_index
@@ -123,6 +125,7 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
         f"-PteamA={player1}",
         f"-PteamB={player2}",
         f"-Pmaps={map}",
+        "-PwaitForClient=true",
         f"-PreplayPath=replays/run-{timestamp}-{player1}-vs-{player2}-on-{map}.bc23",
         f"-PserverPort={server_port}"
     ]
@@ -137,90 +140,95 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
 
     server_url = f"ws://localhost:{server_port}"
 
-    while True:
-        try:
-            async with websockets.connect(server_url):
-                break
-        except:
-            await asyncio.sleep(0.1)
-            if proc.returncode is not None:
-                break
-
-    if proc.returncode is not None:
-        state.console.print(f"{player1} versus {player2} failed on {map} with exit code {proc.returncode}")
-        cleanup(1)
-
     winner = None
     rounds = None
     outcome = None
 
-    async with websockets.connect(server_url) as websocket:
-        hq_count = 0
-        robots1 = set()
-        robots2 = set()
+    while True:
+        try:
+            async with websockets.connect(server_url) as websocket:
+                hq_count = 0
+                robots1 = set()
+                robots2 = set()
 
-        current_map_control_player = None
-        map_control_streak = 0
+                current_map_control_player = None
+                map_control_streak = 0
 
-        async for message in websocket:
-            event = EventWrapper.GetRootAsEventWrapper(message)
-            if event.EType() == Event.MatchHeader:
-                match_header = MatchHeader()
-                match_header.Init(event.E().Bytes, event.E().Pos)
+                anchor_placed = False
 
-                bodies = match_header.Map().Bodies()
-                for i in range(bodies.RobotIdsLength()):
-                    team = bodies.TeamIds(i)
-                    robot_id = bodies.RobotIds(i)
-                    (robots1 if team == 1 else robots2).add(robot_id)
+                async for message in websocket:
+                    event = EventWrapper.GetRootAsEventWrapper(message)
+                    if event.EType() == Event.MatchHeader:
+                        match_header = MatchHeader()
+                        match_header.Init(event.E().Bytes, event.E().Pos)
 
-                hq_count = len(robots1)
-            if event.EType() == Event.Round:
-                round = Round()
-                round.Init(event.E().Bytes, event.E().Pos)
+                        bodies = match_header.Map().Bodies()
+                        for i in range(bodies.RobotIdsLength()):
+                            team = bodies.TeamIds(i)
+                            robot_id = bodies.RobotIds(i)
+                            (robots1 if team == 1 else robots2).add(robot_id)
 
-                rounds = round.RoundId()
+                        hq_count = len(robots1)
+                    if event.EType() == Event.Round:
+                        round = Round()
+                        round.Init(event.E().Bytes, event.E().Pos)
 
-                bodies = round.SpawnedBodies()
-                for i in range(bodies.RobotIdsLength()):
-                    team = bodies.TeamIds(i)
-                    robot_id = bodies.RobotIds(i)
-                    (robots1 if team == 1 else robots2).add(robot_id)
+                        rounds = round.RoundId()
 
-                for i in range(round.DiedIdsLength()):
-                    robot_id = round.DiedIds(i)
-                    robots1.discard(robot_id)
-                    robots2.discard(robot_id)
+                        for i in range(round.ActionIdsLength()):
+                            action = round.ActionIds(i)
+                            if action == Action.PLACE_ANCHOR:
+                                anchor_placed = True
+                                break
 
-                map_control_player = None
-                if len(robots1) > hq_count * 5 and len(robots2) < hq_count * 2:
-                    map_control_player = player1
-                elif len(robots1) < hq_count * 2 and len(robots2) > hq_count * 5:
-                    map_control_player = player2
+                        if anchor_placed:
+                            continue
 
-                if map_control_player is not None and map_control_player == current_map_control_player:
-                    map_control_streak += 1
-                    if map_control_streak == 100:
-                        winner = map_control_player
-                        outcome = Outcome.MAP_CONTROL
-                        proc.kill()
+                        bodies = round.SpawnedBodies()
+                        for i in range(bodies.RobotIdsLength()):
+                            team = bodies.TeamIds(i)
+                            robot_id = bodies.RobotIds(i)
+                            (robots1 if team == 1 else robots2).add(robot_id)
+
+                        for i in range(round.DiedIdsLength()):
+                            robot_id = round.DiedIds(i)
+                            robots1.discard(robot_id)
+                            robots2.discard(robot_id)
+
+                        map_control_player = None
+                        if len(robots1) > hq_count * 5 and len(robots2) < hq_count * 2:
+                            map_control_player = player1
+                        elif len(robots1) < hq_count * 2 and len(robots2) > hq_count * 5:
+                            map_control_player = player2
+
+                        if map_control_player is not None and map_control_player == current_map_control_player:
+                            map_control_streak += 1
+                            if map_control_streak == 100:
+                                winner = map_control_player
+                                outcome = Outcome.MAP_CONTROL
+                                proc.kill()
+                                break
+                        else:
+                            current_map_control_player = map_control_player
+                            map_control_streak = 0
+                    elif event.EType() == Event.MatchFooter:
+                        match_footer = MatchFooter()
+                        match_footer.Init(event.E().Bytes, event.E().Pos)
+
+                        winner = player1 if match_footer.Winner() == 1 else player2
+                        outcome = Outcome.MATCH_END
                         break
-                else:
-                    current_map_control_player = map_control_player
-                    map_control_streak = 0
-            elif event.EType() == Event.MatchFooter:
-                match_footer = MatchFooter()
-                match_footer.Init(event.E().Bytes, event.E().Pos)
-
-                winner = player1 if match_footer.Winner() == 1 else player2
-                outcome = Outcome.MATCH_END
+            break
+        except ConnectionRefusedError:
+            if proc.returncode is not None:
                 break
+
+            await asyncio.sleep(0.1)
 
     if outcome != Outcome.MAP_CONTROL:
         exit_code = await proc.wait()
         if exit_code != 0:
-            state.console.print(f"{player1} versus {player2} failed on {map} with exit code {exit_code}")
-            cleanup(1)
+            outcome = Outcome.ERROR
 
     state.matches.append(Match(player1, player2, map, winner, rounds, outcome))
     print_results(state)

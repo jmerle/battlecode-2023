@@ -59,13 +59,10 @@ public class Carrier extends Unit {
     }
 
     private void act() throws GameActionException {
-        ResourceType resourceTarget = rc.getID() % 2 == 0 ? ResourceType.ADAMANTIUM : ResourceType.MANA;
-        if (rc.getRoundNum() < 50) {
-            resourceTarget = ResourceType.MANA;
-        }
+        ResourceType resourceTarget = ResourceType.MANA;
 
         int cargo = getCargo();
-        int cargoTarget = resourceTarget == ResourceType.ADAMANTIUM ? 25 : 30;
+        int cargoTarget = 30;
 
         if (isCollecting && cargo == cargoTarget) {
             isCollecting = false;
