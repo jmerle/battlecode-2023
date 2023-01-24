@@ -24,6 +24,10 @@ public class Headquarters extends Robot {
             isFirstRun = false;
         }
 
+        if (rc.getRoundNum() > 1750) {
+            return;
+        }
+
         if (!rc.isActionReady()) {
             return;
         }
