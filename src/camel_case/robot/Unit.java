@@ -11,7 +11,7 @@ import battlecode.common.RobotType;
 import camel_case.util.RandomUtils;
 
 public abstract class Unit extends Robot {
-    protected MapLocation currentTarget;
+    private MapLocation currentTarget;
     private boolean isWallFollowing;
     private int distanceBeforeWallFollowing;
     private boolean wallOnRight;
@@ -19,6 +19,10 @@ public abstract class Unit extends Robot {
 
     private int initialDistanceToTarget;
     private int turnsSpentMovingTowardsTarget;
+
+    private Direction[] wanderQuadrants;
+    private int wanderQuadrantIndex;
+    private MapLocation currentWanderTarget;
 
     public Unit(RobotController rc, RobotType type) {
         super(rc, type);
@@ -37,8 +41,8 @@ public abstract class Unit extends Robot {
             int priority = robot.getTotalAnchors() * 1000 + robot.type.damage;
             if (robot.type == RobotType.CARRIER) {
                 int cargo = robot.getResourceAmount(ResourceType.ADAMANTIUM)
-                        + robot.getResourceAmount(ResourceType.MANA)
-                        + robot.getResourceAmount(ResourceType.ELIXIR);
+                    + robot.getResourceAmount(ResourceType.MANA)
+                    + robot.getResourceAmount(ResourceType.ELIXIR);
 
                 priority += cargo / 5;
             }
@@ -103,17 +107,64 @@ public abstract class Unit extends Robot {
     }
 
     protected boolean tryWander() throws GameActionException {
-        for (Direction direction : RandomUtils.shuffle(adjacentDirections.clone())) {
-            if (tryMove(direction)) {
-                return true;
-            }
+        if (wanderQuadrants == null) {
+            wanderQuadrants = RandomUtils.shuffle(new Direction[]{
+                Direction.NORTHEAST,
+                Direction.NORTHWEST,
+                Direction.SOUTHEAST,
+                Direction.SOUTHWEST
+            });
+
+            wanderQuadrantIndex = -1;
         }
 
-        return false;
+        if (currentWanderTarget == null || rc.canSenseLocation(currentWanderTarget) || isStuck(currentWanderTarget)) {
+            wanderQuadrantIndex = (wanderQuadrantIndex + 1) % 4;
+
+            int minX = -1;
+            int maxX = -1;
+            int minY = -1;
+            int maxY = -1;
+
+            int mapWidth = rc.getMapWidth();
+            int mapHeight = rc.getMapHeight();
+
+            switch (wanderQuadrants[wanderQuadrantIndex]) {
+                case NORTHEAST:
+                    minX = mapWidth / 2;
+                    maxX = mapWidth;
+                    minY = mapHeight / 2;
+                    maxY = mapHeight;
+                    break;
+                case NORTHWEST:
+                    minX = 0;
+                    maxX = mapWidth / 2;
+                    minY = mapHeight / 2;
+                    maxY = mapHeight;
+                    break;
+                case SOUTHEAST:
+                    minX = mapWidth / 2;
+                    maxX = mapWidth;
+                    minY = 0;
+                    maxY = mapHeight / 2;
+                    break;
+                case SOUTHWEST:
+                    minX = 0;
+                    maxX = mapWidth / 2;
+                    minY = 0;
+                    maxY = mapHeight / 2;
+                    break;
+            }
+
+            currentWanderTarget = new MapLocation(RandomUtils.nextInt(minX, maxX), RandomUtils.nextInt(minY, maxY));
+            return tryWander();
+        }
+
+        return tryMoveTo(currentWanderTarget);
     }
 
-    protected boolean isStuck() {
-        return currentTarget != null && turnsSpentMovingTowardsTarget > initialDistanceToTarget * 5;
+    protected boolean isStuck(MapLocation expectedTarget) {
+        return expectedTarget.equals(currentTarget) && turnsSpentMovingTowardsTarget > initialDistanceToTarget * 5;
     }
 
     protected boolean tryMoveTo(MapLocation target) throws GameActionException {
@@ -147,8 +198,8 @@ public abstract class Unit extends Robot {
                 Direction current = rc.senseMapInfo(location).getCurrentDirection();
                 Direction requiredDirection = directionTowards(location, target);
                 if (current != requiredDirection
-                        && current != requiredDirection.rotateLeft()
-                        && current != requiredDirection.rotateRight()) {
+                    && current != requiredDirection.rotateLeft()
+                    && current != requiredDirection.rotateRight()) {
                     continue;
                 }
 

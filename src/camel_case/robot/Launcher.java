@@ -137,8 +137,7 @@ public class Launcher extends Unit {
             return false;
         }
 
-        MapLocation currentHq = opponentHqs.get(opponentHqIndex);
-        if (currentHq.equals(currentTarget) && isStuck()) {
+        if (isStuck(opponentHqs.get(opponentHqIndex))) {
             opponentHqs.remove(opponentHqIndex);
 
             if (opponentHqs.isEmpty()) {
