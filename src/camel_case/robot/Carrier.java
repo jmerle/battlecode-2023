@@ -37,7 +37,7 @@ public class Carrier extends Unit {
         for (WellInfo well : rc.senseNearbyWells()) {
             MapLocation location = well.getMapLocation();
             if (wells.containsKey(location)) {
-                if (wells.get(location) == null) {
+                if (wells.get(location) == null && !isReachable(location)) {
                     continue;
                 }
 
@@ -140,8 +140,8 @@ public class Carrier extends Unit {
 
     private int getCargo() {
         return rc.getResourceAmount(ResourceType.ADAMANTIUM)
-                + rc.getResourceAmount(ResourceType.MANA)
-                + rc.getResourceAmount(ResourceType.ELIXIR);
+            + rc.getResourceAmount(ResourceType.MANA)
+            + rc.getResourceAmount(ResourceType.ELIXIR);
     }
 
     private boolean tryCollectResource(MapLocation location, int amount) throws GameActionException {
