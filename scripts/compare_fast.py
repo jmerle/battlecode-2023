@@ -1,5 +1,6 @@
 import asyncio
 import asyncio.subprocess
+import math
 import signal
 import sys
 import traceback
@@ -14,6 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+from rich.console import Console
+from rich.table import Table
 
 class Outcome(StrEnum):
     MATCH_END = "match end"
@@ -32,6 +35,14 @@ class Match:
         winner_color = "red" if self.winner == self.player1 else "blue"
         return f"{self.winner} wins in {self.rounds} rounds as {winner_color} on {self.map} (win by {self.outcome})"
 
+@dataclass
+class State:
+    player1: str
+    player2: str
+    maps: list[str]
+    matches: list[Match]
+    console: Console
+
 processes: list[asyncio.subprocess.Process] = []
 
 def cleanup(exit_code: int) -> None:
@@ -42,7 +53,66 @@ def cleanup(exit_code: int) -> None:
 
     sys.exit(exit_code)
 
-async def run_match(player1: str, player2: str, map: str, timestamp: str, match_index: int, match_count: int) -> Match:
+def print_results(state: State) -> None:
+    table = Table()
+
+    column_groups = 4
+    for _ in range(column_groups):
+        for name in ["Map", "As red", "As blue"]:
+            table.add_column(name)
+
+    row_count = math.ceil(len(state.maps) / column_groups)
+    for y in range(row_count):
+        row = []
+        for x in range(column_groups):
+            map_idx = x * row_count + y
+            if map_idx >= len(state.maps):
+                row.extend([""] * 3)
+                continue
+
+            map = state.maps[map_idx]
+            row.append(map)
+
+            for p1, p2 in [[state.player1, state.player2], [state.player2, state.player1]]:
+                match = next((m for m in state.matches if m.map == map and m.player1 == p1 and m.player2 == p2), None)
+                if match is None:
+                    row.append("")
+                else:
+                    if match.winner == state.player1:
+                        row.append("✅")
+                    else:
+                        row.append("❌")
+
+        table.add_row(*row)
+
+    state.console.print(table)
+
+    player1_wins = 0
+    player2_wins = 0
+
+    for match in state.matches:
+        if match.winner == state.player1:
+            player1_wins += 1
+        else:
+            player2_wins += 1
+
+    if player1_wins > player2_wins:
+        color = "green"
+    elif player1_wins < player2_wins:
+        color = "red"
+    else:
+        color = None
+
+    prefix = f"[{color}]" if color is not None else ""
+    suffix = "[/]" if color is not None else ""
+
+    for name, my_wins, opponent_wins in [[state.player1, player1_wins, player2_wins], [state.player2, player2_wins, player1_wins]]:
+        total_wins = my_wins + opponent_wins
+        win_rate = my_wins / total_wins if total_wins > 0 else 0
+
+        state.console.print(f"{prefix}{name} wins: [b]{my_wins}[/] ([b]{win_rate * 100:,.2f}%[/] win rate){suffix}")
+
+async def run_match(player1: str, player2: str, map: str, timestamp: str, match_index: int, state: State) -> None:
     server_port = 6175 + 1 + match_index
 
     program = str(Path(__file__).parent.parent / "gradlew")
@@ -77,7 +147,7 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
                 break
 
     if proc.returncode is not None:
-        print(f"{player1} versus {player2} failed on {map} with exit code {proc.returncode}")
+        state.console.print(f"{player1} versus {player2} failed on {map} with exit code {proc.returncode}")
         cleanup(1)
 
     winner = None
@@ -149,17 +219,13 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
     if outcome != Outcome.MAP_CONTROL:
         exit_code = await proc.wait()
         if exit_code != 0:
-            print(f"{player1} versus {player2} failed on {map} with exit code {exit_code}")
+            state.console.print(f"{player1} versus {player2} failed on {map} with exit code {exit_code}")
             cleanup(1)
 
-    match = Match(player1, player2, map, winner, rounds, outcome)
+    state.matches.append(Match(player1, player2, map, winner, rounds, outcome))
+    print_results(state)
 
-    prefix = f"[{str(match_index + 1).rjust(len(str(match_count)))}/{match_count}]"
-    print(f"{prefix} {match}")
-
-    return match
-
-async def run_match_wrapper(semaphore: asyncio.Semaphore, *args) -> Match:
+async def run_match_wrapper(semaphore: asyncio.Semaphore, *args) -> None:
     async with semaphore:
         return await run_match(*args)
 
@@ -208,58 +274,20 @@ async def run(player1: str, player2: str) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     semaphore = asyncio.Semaphore(4)
 
-    print(f"Running {2 * len(maps)} matches")
+    console = Console(highlight=False)
 
-    matches = []
+    console.print(f"Running {2 * len(maps)} matches")
+
+    tasks = []
+    state = State(player1, player2, maps, [], console)
+
+    print_results(state)
+
     for map_idx, map in enumerate(maps):
         for order_idx, players in enumerate([[player1, player2], [player2, player1]]):
-            matches.append(run_match_wrapper(semaphore, *players, map, timestamp, map_idx * 2 + order_idx, 2 * len(maps)))
+            tasks.append(run_match_wrapper(semaphore, *players, map, timestamp, map_idx * 2 + order_idx, state))
 
-    matches = await asyncio.gather(*matches)
-
-    map_winners = {}
-
-    player1_wins = 0
-    player2_wins = 0
-
-    for match in matches:
-        if match.map in map_winners and map_winners[match.map] != match.winner:
-            map_winners[match.map] = "Tied"
-        else:
-            map_winners[match.map] = match.winner
-
-        if match.winner == player1:
-            player1_wins += 1
-        else:
-            player2_wins += 1
-
-    tied_maps = [k for k, v in map_winners.items() if v == "Tied"]
-    player1_superior_maps = [k for k, v in map_winners.items() if v == player1]
-    player2_superior_maps = [k for k, v in map_winners.items() if v == player2]
-
-    if len(tied_maps) > 0:
-        print(f"Tied maps ({len(tied_maps)}):")
-        for map in tied_maps:
-            print(f"- {map}")
-    else:
-        print(f"There are no tied maps")
-
-    if len(player1_superior_maps) > 0:
-        print(f"Maps {player1} wins on as both red and blue ({len(player1_superior_maps)}):")
-        for map in player1_superior_maps:
-            print(f"- {map}")
-    else:
-        print(f"There are no maps {player1} wins on as both red and blue")
-
-    if len(player2_superior_maps) > 0:
-        print(f"Maps {player2} wins on as both red and blue ({len(player2_superior_maps)}):")
-        for map in player2_superior_maps:
-            print(f"- {map}")
-    else:
-        print(f"There are no maps {player2} wins on as both red and blue")
-
-    print(f"{player1} wins: {player1_wins} ({player1_wins / (player1_wins + player2_wins) * 100:,.2f}% win rate)")
-    print(f"{player2} wins: {player2_wins} ({player2_wins / (player1_wins + player2_wins) * 100:,.2f}% win rate)")
+    await asyncio.gather(*tasks)
 
 async def main() -> None:
     parser = ArgumentParser(description="Compare the performance of two players.")
