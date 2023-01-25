@@ -20,8 +20,6 @@ public abstract class Unit extends Robot {
     private int initialDistanceToTarget;
     private int turnsSpentMovingTowardsTarget;
 
-    private Direction[] wanderQuadrants;
-    private int wanderQuadrantIndex;
     private MapLocation currentWanderTarget;
 
     public Unit(RobotController rc, RobotType type) {
@@ -106,58 +104,19 @@ public abstract class Unit extends Robot {
         return false;
     }
 
+    protected boolean isWanderTargetValid(MapLocation target) {
+        return true;
+    }
+
     protected boolean tryWander() throws GameActionException {
-        if (wanderQuadrants == null) {
-            wanderQuadrants = RandomUtils.shuffle(new Direction[]{
-                Direction.NORTHEAST,
-                Direction.NORTHWEST,
-                Direction.SOUTHEAST,
-                Direction.SOUTHWEST
-            });
-
-            wanderQuadrantIndex = -1;
-        }
-
         if (currentWanderTarget == null || rc.canSenseLocation(currentWanderTarget) || isStuck(currentWanderTarget)) {
-            wanderQuadrantIndex = (wanderQuadrantIndex + 1) % 4;
-
-            int minX = -1;
-            int maxX = -1;
-            int minY = -1;
-            int maxY = -1;
-
             int mapWidth = rc.getMapWidth();
             int mapHeight = rc.getMapHeight();
 
-            switch (wanderQuadrants[wanderQuadrantIndex]) {
-                case NORTHEAST:
-                    minX = mapWidth / 2;
-                    maxX = mapWidth;
-                    minY = mapHeight / 2;
-                    maxY = mapHeight;
-                    break;
-                case NORTHWEST:
-                    minX = 0;
-                    maxX = mapWidth / 2;
-                    minY = mapHeight / 2;
-                    maxY = mapHeight;
-                    break;
-                case SOUTHEAST:
-                    minX = mapWidth / 2;
-                    maxX = mapWidth;
-                    minY = 0;
-                    maxY = mapHeight / 2;
-                    break;
-                case SOUTHWEST:
-                    minX = 0;
-                    maxX = mapWidth / 2;
-                    minY = 0;
-                    maxY = mapHeight / 2;
-                    break;
+            currentWanderTarget = null;
+            while (currentWanderTarget == null || rc.canSenseLocation(currentWanderTarget) || !isWanderTargetValid(currentWanderTarget)) {
+                currentWanderTarget = new MapLocation(RandomUtils.nextInt(mapWidth), RandomUtils.nextInt(mapHeight));
             }
-
-            currentWanderTarget = new MapLocation(RandomUtils.nextInt(minX, maxX), RandomUtils.nextInt(minY, maxY));
-            return tryWander();
         }
 
         return tryMoveTo(currentWanderTarget);

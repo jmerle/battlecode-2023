@@ -19,6 +19,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from typing import Optional
+from websockets.exceptions import ConnectionClosedError
 
 class Outcome(StrEnum):
     MATCH_END = "match end"
@@ -224,6 +225,10 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
                 break
 
             await asyncio.sleep(0.1)
+        except ConnectionClosedError:
+            if outcome is None:
+                outcome = Outcome.ERROR
+            break
 
     if outcome != Outcome.MAP_CONTROL:
         exit_code = await proc.wait()
@@ -296,6 +301,7 @@ async def run(player1: str, player2: str) -> None:
             tasks.append(run_match_wrapper(semaphore, *players, map, timestamp, map_idx * 2 + order_idx, state))
 
     await asyncio.gather(*tasks)
+    print("\a", end="")
 
 async def main() -> None:
     parser = ArgumentParser(description="Compare the performance of two players.")

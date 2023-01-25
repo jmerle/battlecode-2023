@@ -2,6 +2,7 @@ package camel_case.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
@@ -9,6 +10,8 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.WellInfo;
+import camel_case.RobotPlayer;
+import camel_case.util.MapLocationSet;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +21,9 @@ public class Carrier extends Unit {
 
     private MapLocation hqLocation = null;
     private boolean isCollecting = true;
+
+    private MapLocationSet hasSeen = new MapLocationSet();
+    private MapLocationSet hasMarkedFrom = new MapLocationSet();
 
     public Carrier(RobotController rc) {
         super(rc, RobotType.CARRIER);
@@ -92,6 +98,16 @@ public class Carrier extends Unit {
             }
 
             if (closestWell == null) {
+                if (!hasMarkedFrom.contains(rc.getLocation())) {
+                    RobotPlayer.logBytecodeWarnings = false;
+
+                    for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), me.visionRadiusSquared)) {
+                        hasSeen.add(location);
+                    }
+
+                    hasMarkedFrom.add(rc.getLocation());
+                }
+
                 tryWander();
             } else if (rc.getLocation().isAdjacentTo(closestWell.getMapLocation())) {
                 tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), cargoTarget - cargo));
@@ -114,6 +130,34 @@ public class Carrier extends Unit {
                 tryMoveTo(hqLocation);
             }
         }
+    }
+
+    @Override
+    protected boolean isWanderTargetValid(MapLocation target) {
+        if (hasSeen.contains(target)) {
+            return false;
+        }
+
+        boolean knownAdamantium = false;
+        for (Map.Entry<MapLocation, WellInfo> entry : wells.entrySet()) {
+            WellInfo well = entry.getValue();
+            if (well == null || well.getResourceType() != ResourceType.ADAMANTIUM) {
+                continue;
+            }
+
+            knownAdamantium = true;
+
+            MapLocation location = entry.getKey();
+            if (location.distanceSquaredTo(target) <= GameConstants.MAX_DISTANCE_BETWEEN_WELLS) {
+                return true;
+            }
+        }
+
+        if (knownAdamantium) {
+            return false;
+        }
+
+        return hqLocation.distanceSquaredTo(target) <= GameConstants.MIN_NEAREST_AD_DISTANCE;
     }
 
     private boolean isReachable(MapLocation location) throws GameActionException {
