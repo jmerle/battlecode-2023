@@ -8,8 +8,6 @@ import battlecode.common.RobotType;
 import battlecode.common.WellInfo;
 
 public class Headquarters extends Robot {
-    private boolean isFirstRun = true;
-
     public Headquarters(RobotController rc) {
         super(rc, RobotType.HEADQUARTERS);
     }
@@ -18,28 +16,29 @@ public class Headquarters extends Robot {
     public void run() throws GameActionException {
         int turnIndex = sharedArray.getHeadquartersTurnIndex();
 
-        if (isFirstRun) {
+        if (rc.getRoundNum() == 1) {
             sharedArray.setMyHqLocation(turnIndex, rc.getLocation());
-
-            isFirstRun = false;
         }
 
         if (rc.getRoundNum() > 1750) {
             return;
         }
 
-        if (!rc.isActionReady()) {
-            return;
+        while (tryBuildRobot(RobotType.LAUNCHER)) {
         }
 
-        RobotType type = hasResources(RobotType.LAUNCHER) ? RobotType.LAUNCHER : RobotType.CARRIER;
-        if (!hasResources(type)) {
-            return;
+        while (tryBuildRobot(RobotType.CARRIER)) {
+        }
+    }
+
+    private boolean tryBuildRobot(RobotType type) throws GameActionException {
+        if (!rc.isActionReady() || !hasResources(type)) {
+            return false;
         }
 
         MapLocation location = null;
 
-        if (type == RobotType.CARRIER) {
+        if (type == RobotType.CARRIER && rc.getRoundNum() > 1) {
             location = getBuildLocationNearWell(ResourceType.MANA);
             if (location == null) {
                 location = getBuildLocationNearWell(ResourceType.ADAMANTIUM);
@@ -50,9 +49,11 @@ public class Headquarters extends Robot {
             location = getBuildLocationRelativeToCenter(type, type == RobotType.LAUNCHER);
         }
 
-        if (location != null) {
-            tryBuildRobot(type, location);
+        if (location == null) {
+            return false;
         }
+
+        return tryBuildRobot(type, location);
     }
 
     private MapLocation getBuildLocationRelativeToCenter(RobotType type, boolean minimizeDistanceToCenter) throws GameActionException {
