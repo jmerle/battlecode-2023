@@ -46,7 +46,10 @@ public class Carrier extends Unit {
 
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
             if (robot.type == RobotType.LAUNCHER) {
-                isCollecting = false;
+                if (rc.getHealth() < me.getMaxHealth()) {
+                    isCollecting = false;
+                }
+
                 tryMoveToSafety();
                 break;
             }
