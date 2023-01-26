@@ -2,7 +2,6 @@ package camel_case.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
 import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
@@ -12,8 +11,11 @@ import battlecode.common.RobotType;
 import battlecode.common.WellInfo;
 import camel_case.RobotPlayer;
 import camel_case.util.MapLocationSet;
+import camel_case.util.RandomUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Carrier extends Unit {
@@ -24,6 +26,8 @@ public class Carrier extends Unit {
 
     private MapLocationSet hasSeen = new MapLocationSet();
     private MapLocationSet hasMarkedFrom = new MapLocationSet();
+
+    private MapLocation previousLocation = null;
 
     public Carrier(RobotController rc) {
         super(rc, RobotType.CARRIER);
@@ -40,21 +44,9 @@ public class Carrier extends Unit {
             }
         }
 
-        for (WellInfo well : rc.senseNearbyWells()) {
-            MapLocation location = well.getMapLocation();
-            if (wells.containsKey(location)) {
-                if (wells.get(location) == null && !isReachable(location)) {
-                    continue;
-                }
-
-                wells.put(location, well);
-            } else {
-                wells.put(location, isReachable(location) ? well : null);
-            }
-        }
-
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
             if (robot.type == RobotType.LAUNCHER) {
+                isCollecting = false;
                 tryMoveToSafety();
                 break;
             }
@@ -78,6 +70,23 @@ public class Carrier extends Unit {
             isCollecting = true;
         }
 
+        if (!rc.getLocation().equals(previousLocation)) {
+            for (WellInfo well : rc.senseNearbyWells()) {
+                MapLocation location = well.getMapLocation();
+                if (wells.containsKey(location)) {
+                    if (wells.get(location) == null && !isReachable(location)) {
+                        continue;
+                    }
+
+                    wells.put(location, well);
+                } else {
+                    wells.put(location, isReachable(location) ? well : null);
+                }
+            }
+
+            previousLocation = rc.getLocation();
+        }
+
         if (isCollecting) {
             WellInfo closestWell = null;
             int minDistance = Integer.MAX_VALUE;
@@ -98,9 +107,9 @@ public class Carrier extends Unit {
             }
 
             if (closestWell == null) {
-                if (!hasMarkedFrom.contains(rc.getLocation())) {
-                    RobotPlayer.logBytecodeWarnings = false;
+                RobotPlayer.logBytecodeWarnings = false;
 
+                if (!hasMarkedFrom.contains(rc.getLocation())) {
                     for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), me.visionRadiusSquared)) {
                         hasSeen.add(location);
                     }
@@ -133,31 +142,53 @@ public class Carrier extends Unit {
     }
 
     @Override
-    protected boolean isWanderTargetValid(MapLocation target) {
-        if (hasSeen.contains(target)) {
-            return false;
-        }
+    protected MapLocation getNewWanderTarget() {
+        List<MapLocation> beacons = new ArrayList<>();
 
-        boolean knownAdamantium = false;
+        boolean foundWell = false;
         for (Map.Entry<MapLocation, WellInfo> entry : wells.entrySet()) {
             WellInfo well = entry.getValue();
-            if (well == null || well.getResourceType() != ResourceType.ADAMANTIUM) {
+            if (well == null) {
+                foundWell = true;
                 continue;
             }
 
-            knownAdamantium = true;
-
-            MapLocation location = entry.getKey();
-            if (location.distanceSquaredTo(target) <= GameConstants.MAX_DISTANCE_BETWEEN_WELLS) {
-                return true;
+            if (well.getResourceType() == ResourceType.ADAMANTIUM) {
+                foundWell = true;
+                beacons.add(well.getMapLocation());
             }
         }
 
-        if (knownAdamantium) {
-            return false;
+        if (beacons.isEmpty() && !foundWell) {
+            beacons.add(hqLocation);
         }
 
-        return hqLocation.distanceSquaredTo(target) <= GameConstants.MIN_NEAREST_AD_DISTANCE;
+        if (beacons.isEmpty()) {
+            MapLocation target = null;
+            while (target == null) {
+                MapLocation possibleTarget = super.getNewWanderTarget();
+                if (!rc.canSenseLocation(possibleTarget) && !hasSeen.contains(possibleTarget)) {
+                    target = possibleTarget;
+                }
+            }
+
+            return target;
+        }
+
+        MapLocation target = null;
+        while (target == null) {
+            MapLocation beacon = beacons.get(RandomUtils.nextInt(beacons.size()));
+            MapLocation possibleTarget = beacon.translate(RandomUtils.nextInt(-10, 11), RandomUtils.nextInt(-10, 11));
+
+            if (rc.onTheMap(possibleTarget)
+                && !rc.canSenseLocation(possibleTarget)
+                && possibleTarget.distanceSquaredTo(beacon) <= 100
+                && !hasSeen.contains(possibleTarget)) {
+                target = possibleTarget;
+            }
+        }
+
+        return target;
     }
 
     private boolean isReachable(MapLocation location) throws GameActionException {

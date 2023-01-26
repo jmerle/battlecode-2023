@@ -71,7 +71,8 @@ def print_results(state: State) -> None:
                 continue
 
             map = state.maps[map_idx]
-            row.append(map)
+            wins = 0
+            losses = 0
 
             for p1, p2 in [[state.player1, state.player2], [state.player2, state.player1]]:
                 match = next((m for m in state.matches if m.map == map and m.player1 == p1 and m.player2 == p2), None)
@@ -82,8 +83,22 @@ def print_results(state: State) -> None:
                         row.append("[red]Error[/red]")
                     elif match.winner == state.player1:
                         row.append("✅")
+                        wins += 1
                     else:
                         row.append("❌")
+                        losses += 1
+
+            if wins == 2:
+                map_color = "green"
+            elif losses == 2:
+                map_color = "red"
+            else:
+                map_color = None
+
+            map_prefix = f"[{map_color}]" if map_color is not None else ""
+            map_suffix = "[/]" if map_color is not None else ""
+
+            row.insert(-2, map_prefix + map + map_suffix)
 
         table.add_row(*row)
 
@@ -176,11 +191,11 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
 
                         rounds = round.RoundId()
 
-                        for i in range(round.ActionIdsLength()):
-                            action = round.ActionIds(i)
-                            if action == Action.PLACE_ANCHOR:
-                                anchor_placed = True
-                                break
+                        if not anchor_placed:
+                            for i in range(round.ActionsLength()):
+                                if round.Actions(i) == Action.PLACE_ANCHOR:
+                                    anchor_placed = True
+                                    break
 
                         if anchor_placed:
                             continue
@@ -227,12 +242,14 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
             await asyncio.sleep(0.1)
         except ConnectionClosedError:
             if outcome is None:
+                state.console.print(f"ConnectionClosedError on {player1} vs {player2} on {map}")
                 outcome = Outcome.ERROR
             break
 
     if outcome != Outcome.MAP_CONTROL:
         exit_code = await proc.wait()
         if exit_code != 0:
+            state.console.print(f"exit_code != 0 on {player1} vs {player2} on {map}")
             outcome = Outcome.ERROR
 
     state.matches.append(Match(player1, player2, map, winner, rounds, outcome))

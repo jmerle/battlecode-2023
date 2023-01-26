@@ -104,19 +104,13 @@ public abstract class Unit extends Robot {
         return false;
     }
 
-    protected boolean isWanderTargetValid(MapLocation target) {
-        return true;
+    protected MapLocation getNewWanderTarget() {
+        return new MapLocation(RandomUtils.nextInt(rc.getMapWidth()), RandomUtils.nextInt(rc.getMapHeight()));
     }
 
     protected boolean tryWander() throws GameActionException {
         if (currentWanderTarget == null || rc.canSenseLocation(currentWanderTarget) || isStuck(currentWanderTarget)) {
-            int mapWidth = rc.getMapWidth();
-            int mapHeight = rc.getMapHeight();
-
-            currentWanderTarget = null;
-            while (currentWanderTarget == null || rc.canSenseLocation(currentWanderTarget) || !isWanderTargetValid(currentWanderTarget)) {
-                currentWanderTarget = new MapLocation(RandomUtils.nextInt(mapWidth), RandomUtils.nextInt(mapHeight));
-            }
+            currentWanderTarget = getNewWanderTarget();
         }
 
         return tryMoveTo(currentWanderTarget);
@@ -144,6 +138,10 @@ public abstract class Unit extends Robot {
         turnsSpentMovingTowardsTarget++;
 
         if (isWallFollowing && currentDistance < distanceBeforeWallFollowing) {
+            isWallFollowing = false;
+        }
+
+        if (isWallFollowing && lastFollowedWall != null && rc.canSenseLocation(lastFollowedWall) && isPassable(lastFollowedWall)) {
             isWallFollowing = false;
         }
 
