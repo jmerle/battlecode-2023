@@ -13,8 +13,16 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Launcher extends Unit {
+    private int[][] RANGE_5_TO_16 = {
+        {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1}, {-2, -2}, {-2, 2}, {2, -2}, {2, 2},
+        {-3, 0}, {0, -3}, {0, 3}, {3, 0}, {-3, -1}, {-3, 1}, {-1, -3}, {-1, 3}, {1, -3}, {1, 3}, {3, -1}, {3, 1},
+        {-3, -2}, {-3, 2}, {-2, -3}, {-2, 3}, {2, -3}, {2, 3}, {3, -2}, {3, 2}, {-4, 0}, {0, -4}, {0, 4}, {4, 0}
+    };
+
     private List<MapLocation> opponentHqs;
     private int opponentHqIndex;
+
+    private MapLocation hqLocation;
 
     public Launcher(RobotController rc) {
         super(rc, RobotType.LAUNCHER);
@@ -28,8 +36,19 @@ public class Launcher extends Unit {
             pruneOpponentHqs();
         }
 
+        if (hqLocation == null) {
+            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
+                if (robot.type == RobotType.HEADQUARTERS) {
+                    hqLocation = robot.location;
+                    break;
+                }
+            }
+        }
+
         act();
         act();
+
+        tryBlindAttack();
     }
 
     private void act() throws GameActionException {
@@ -51,6 +70,32 @@ public class Launcher extends Unit {
         }
 
         tryWander();
+    }
+
+    private void tryBlindAttack() throws GameActionException {
+        if (!rc.isActionReady()) {
+            return;
+        }
+
+        int distanceToHq = hqLocation.distanceSquaredTo(rc.getLocation());
+
+        for (int[] dxdy : RANGE_5_TO_16) {
+            MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
+            if (rc.senseCloud(location) && hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                return;
+            }
+        }
+
+        if (!rc.senseCloud(rc.getLocation())) {
+            return;
+        }
+
+        for (int[] dxdy : RANGE_5_TO_16) {
+            MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
+            if (hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                return;
+            }
+        }
     }
 
     private void findOpponentHqs() throws GameActionException {
