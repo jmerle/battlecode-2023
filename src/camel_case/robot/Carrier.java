@@ -216,6 +216,34 @@ public class Carrier extends Unit {
                 lookingForWell = true;
                 tryWander();
             } else if (rc.getLocation().isAdjacentTo(closestWell.getMapLocation())) {
+                Direction bestDirection = null;
+                int minDistanceToHq = rc.getLocation().distanceSquaredTo(hqLocation);
+
+                for (Direction direction : adjacentDirections) {
+                    if (!rc.canMove(direction)) {
+                        continue;
+                    }
+
+                    MapLocation newLocation = rc.getLocation().add(direction);
+                    if (!newLocation.isAdjacentTo(closestWell.getMapLocation())) {
+                        continue;
+                    }
+
+                    if (rc.senseMapInfo(newLocation).getCurrentDirection() != Direction.CENTER) {
+                        continue;
+                    }
+
+                    int newDistance = newLocation.distanceSquaredTo(hqLocation);
+                    if (newDistance <= minDistanceToHq) {
+                        bestDirection = direction;
+                        minDistanceToHq = newDistance;
+                    }
+                }
+
+                if (bestDirection != null) {
+                    tryMove(bestDirection);
+                }
+
                 lookingForWell = false;
                 tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), cargoTarget - cargo));
             } else {
