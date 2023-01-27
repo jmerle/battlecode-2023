@@ -138,15 +138,15 @@ public class Launcher extends Unit {
             }
         }
 
-        if (!(hqInQ1 && hqInQ3) && !(hqInQ2 && hqInQ4)) {
-            for (MapLocation hq : myHqs) {
-                opponentHqs.add(Symmetry.HORIZONTAL.reflect(rc, hq));
-            }
-        }
-
         if (!(hqInQ1 && hqInQ2) && !(hqInQ3 && hqInQ4)) {
             for (MapLocation hq : myHqs) {
                 opponentHqs.add(Symmetry.VERTICAL.reflect(rc, hq));
+            }
+        }
+
+        if (!(hqInQ1 && hqInQ3) && !(hqInQ2 && hqInQ4)) {
+            for (MapLocation hq : myHqs) {
+                opponentHqs.add(Symmetry.HORIZONTAL.reflect(rc, hq));
             }
         }
 

@@ -5,8 +5,8 @@ import battlecode.common.RobotController;
 
 public enum Symmetry {
     ROTATIONAL(true, true),
-    HORIZONTAL(false, true),
-    VERTICAL(true, false);
+    VERTICAL(true, false),
+    HORIZONTAL(false, true);
 
     private final boolean reflectX;
     private final boolean reflectY;
