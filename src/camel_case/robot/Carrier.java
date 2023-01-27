@@ -1,5 +1,6 @@
 package camel_case.robot;
 
+import battlecode.common.Anchor;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
@@ -8,6 +9,7 @@ import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 import battlecode.common.WellInfo;
 import camel_case.RobotPlayer;
 import camel_case.util.MapLocationSet;
@@ -29,6 +31,11 @@ public class Carrier extends Unit {
 
     private MapLocation previousLocation = null;
 
+    private boolean lookingForWell = true;
+
+    private MapLocation[] islandLocations = null;
+    private boolean[] blockedIslands = null;
+
     public Carrier(RobotController rc) {
         super(rc, RobotType.CARRIER);
     }
@@ -40,6 +47,24 @@ public class Carrier extends Unit {
                 if (robot.type == RobotType.HEADQUARTERS) {
                     hqLocation = robot.location;
                     break;
+                }
+            }
+        }
+
+        if (!lookingForWell) {
+            if (islandLocations == null) {
+                islandLocations = new MapLocation[rc.getIslandCount()];
+                blockedIslands = new boolean[islandLocations.length];
+            }
+
+            for (int islandId : rc.senseNearbyIslands()) {
+                if (islandLocations[islandId - 1] != null) {
+                    continue;
+                }
+
+                MapLocation location = rc.senseNearbyIslandLocations(islandId)[0];
+                if (isReachable(location)) {
+                    islandLocations[islandId - 1] = location;
                 }
             }
         }
@@ -62,8 +87,58 @@ public class Carrier extends Unit {
     private void act() throws GameActionException {
         ResourceType resourceTarget = ResourceType.MANA;
 
-        int cargo = getCargo();
+        int cargo = rc.getWeight();
         int cargoTarget = 30;
+
+        if (!lookingForWell) {
+            if (cargo == 0 && rc.getLocation().isAdjacentTo(hqLocation)) {
+                RobotInfo hq = rc.senseRobotAtLocation(hqLocation);
+                if (hq.getNumAnchors(Anchor.STANDARD) > 0) {
+                    tryTakeAnchor(hqLocation, Anchor.STANDARD);
+                    return;
+                }
+            }
+
+            if (rc.getNumAnchors(Anchor.STANDARD) > 0) {
+                int currentIslandId = rc.senseIsland(rc.getLocation());
+                if (currentIslandId != -1 && rc.senseTeamOccupyingIsland(currentIslandId) == Team.NEUTRAL) {
+                    tryPlaceAnchor();
+                    return;
+                }
+
+                MapLocation closestIsland = null;
+                int minDistance = Integer.MAX_VALUE;
+
+                for (int i = 0; i < islandLocations.length; i++) {
+                    if (blockedIslands[i]) {
+                        continue;
+                    }
+
+                    MapLocation location = islandLocations[i];
+                    if (location == null) {
+                        continue;
+                    }
+
+                    if (rc.canSenseLocation(location) && rc.senseTeamOccupyingIsland(i + 1) != Team.NEUTRAL) {
+                        blockedIslands[i] = true;
+                        continue;
+                    }
+
+                    int distance = rc.getLocation().distanceSquaredTo(location);
+                    if (distance < minDistance) {
+                        closestIsland = location;
+                        minDistance = distance;
+                    }
+                }
+
+                if (closestIsland != null) {
+                    tryMoveTo(closestIsland);
+                } else {
+                    tryWander();
+                }
+                return;
+            }
+        }
 
         if (isCollecting && cargo == cargoTarget) {
             isCollecting = false;
@@ -120,10 +195,13 @@ public class Carrier extends Unit {
                     hasMarkedFrom.add(rc.getLocation());
                 }
 
+                lookingForWell = true;
                 tryWander();
             } else if (rc.getLocation().isAdjacentTo(closestWell.getMapLocation())) {
+                lookingForWell = false;
                 tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), cargoTarget - cargo));
             } else {
+                lookingForWell = false;
                 tryMoveTo(closestWell.getMapLocation());
             }
         } else {
@@ -213,12 +291,6 @@ public class Carrier extends Unit {
         return true;
     }
 
-    private int getCargo() {
-        return rc.getResourceAmount(ResourceType.ADAMANTIUM)
-            + rc.getResourceAmount(ResourceType.MANA)
-            + rc.getResourceAmount(ResourceType.ELIXIR);
-    }
-
     private boolean tryCollectResource(MapLocation location, int amount) throws GameActionException {
         if (rc.canCollectResource(location, amount)) {
             rc.collectResource(location, amount);
@@ -231,6 +303,24 @@ public class Carrier extends Unit {
     private boolean tryTransferResource(MapLocation location, ResourceType type, int amount) throws GameActionException {
         if (rc.canTransferResource(location, type, amount)) {
             rc.transferResource(location, type, amount);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean tryTakeAnchor(MapLocation location, Anchor anchor) throws GameActionException {
+        if (rc.canTakeAnchor(location, anchor)) {
+            rc.takeAnchor(location, anchor);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean tryPlaceAnchor() throws GameActionException {
+        if (rc.canPlaceAnchor()) {
+            rc.placeAnchor();
             return true;
         }
 

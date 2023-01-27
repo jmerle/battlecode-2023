@@ -1,13 +1,18 @@
 package camel_case.robot;
 
+import battlecode.common.Anchor;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.WellInfo;
 
 public class Headquarters extends Robot {
+    private int lastAnchorRound = 0;
+    private int lastDangerRound = 0;
+
     public Headquarters(RobotController rc) {
         super(rc, RobotType.HEADQUARTERS);
     }
@@ -20,11 +25,27 @@ public class Headquarters extends Robot {
             sharedArray.setMyHqLocation(turnIndex, rc.getLocation());
         }
 
-        if (rc.getRoundNum() > 1750) {
-            return;
+        for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
+            if (robot.type == RobotType.LAUNCHER) {
+                lastDangerRound = rc.getRoundNum();
+                break;
+            }
         }
 
-        while (tryBuildRobot(RobotType.LAUNCHER)) {
+        if (rc.getNumAnchors(Anchor.STANDARD) == 0
+            && rc.getRobotCount() > sharedArray.getHqCount() * 10
+            && rc.getRoundNum() - lastAnchorRound > 100
+            && rc.getRoundNum() - lastDangerRound > 300) {
+            if (tryBuildAnchor(Anchor.STANDARD)) {
+                lastAnchorRound = rc.getRoundNum();
+            } else {
+                return;
+            }
+        }
+
+        if (rc.getRoundNum() <= 1750) {
+            while (tryBuildRobot(RobotType.LAUNCHER)) {
+            }
         }
 
         while (tryBuildRobot(RobotType.CARRIER)) {
@@ -118,6 +139,15 @@ public class Headquarters extends Robot {
     private boolean tryBuildRobot(RobotType type, MapLocation location) throws GameActionException {
         if (rc.canBuildRobot(type, location)) {
             rc.buildRobot(type, location);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean tryBuildAnchor(Anchor anchor) throws GameActionException {
+        if (rc.canBuildAnchor(anchor)) {
+            rc.buildAnchor(anchor);
             return true;
         }
 

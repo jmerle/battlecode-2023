@@ -37,8 +37,6 @@ public abstract class Robot {
 
     protected SharedArray sharedArray;
 
-    public boolean logBytecodeWarnings = true;
-
     public Robot(RobotController rc, RobotType type) {
         this.rc = rc;
 
