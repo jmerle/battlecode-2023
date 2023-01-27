@@ -69,6 +69,24 @@ public class Carrier extends Unit {
             }
         }
 
+        if (!lookingForWell) {
+            int distanceToHq = rc.getLocation().distanceSquaredTo(hqLocation);
+            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
+                if (robot.type != RobotType.HEADQUARTERS) {
+                    continue;
+                }
+
+                int newDistanceToHq = rc.getLocation().distanceSquaredTo(robot.location);
+                if (newDistanceToHq + 50 > distanceToHq) {
+                    continue;
+                }
+
+                if (isReachable(robot.location)) {
+                    hqLocation = robot.location;
+                }
+            }
+        }
+
         for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
             if (robot.type == RobotType.LAUNCHER) {
                 if (rc.getHealth() < me.getMaxHealth()) {
