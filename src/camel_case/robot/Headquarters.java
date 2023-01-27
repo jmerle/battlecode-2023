@@ -32,23 +32,42 @@ public class Headquarters extends Robot {
             }
         }
 
-        if (rc.getNumAnchors(Anchor.STANDARD) == 0
+        boolean buildingAnchor = rc.getNumAnchors(Anchor.STANDARD) == 0
             && rc.getRobotCount() > sharedArray.getHqCount() * 10
             && rc.getRoundNum() - lastAnchorRound > 100
-            && rc.getRoundNum() - lastDangerRound > 300) {
-            if (tryBuildAnchor(Anchor.STANDARD)) {
-                lastAnchorRound = rc.getRoundNum();
-            } else {
-                return;
-            }
+            && rc.getRoundNum() - lastDangerRound > 300;
+
+        if (buildingAnchor && tryBuildAnchor(Anchor.STANDARD)) {
+            lastAnchorRound = rc.getRoundNum();
+            buildingAnchor = false;
         }
 
         if (rc.getRoundNum() <= 1750) {
-            while (tryBuildRobot(RobotType.LAUNCHER)) {
+            int anchorMana = Anchor.STANDARD.manaCost;
+            int launcherMana = RobotType.LAUNCHER.buildCostMana;
+
+            while (true) {
+                if (buildingAnchor && rc.getResourceAmount(ResourceType.MANA) - launcherMana < anchorMana) {
+                    break;
+                }
+
+                if (!tryBuildRobot(RobotType.LAUNCHER)) {
+                    break;
+                }
             }
         }
 
-        while (tryBuildRobot(RobotType.CARRIER)) {
+        int anchorAdamantium = Anchor.STANDARD.adamantiumCost;
+        int carrierAdamantium = RobotType.CARRIER.buildCostAdamantium;
+
+        while (true) {
+            if (buildingAnchor && rc.getResourceAmount(ResourceType.ADAMANTIUM) - carrierAdamantium < anchorAdamantium) {
+                break;
+            }
+
+            if (!tryBuildRobot(RobotType.CARRIER)) {
+                break;
+            }
         }
     }
 

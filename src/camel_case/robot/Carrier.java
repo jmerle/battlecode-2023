@@ -224,6 +224,10 @@ public class Carrier extends Unit {
 
     @Override
     protected MapLocation getNewWanderTarget() {
+        if (rc.getNumAnchors(Anchor.STANDARD) > 0) {
+            return super.getNewWanderTarget();
+        }
+
         List<MapLocation> beacons = new ArrayList<>();
 
         boolean foundWell = false;

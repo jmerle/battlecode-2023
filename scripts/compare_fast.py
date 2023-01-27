@@ -246,11 +246,10 @@ async def run_match(player1: str, player2: str, map: str, timestamp: str, match_
                 outcome = Outcome.ERROR
             break
 
-    if outcome != Outcome.MAP_CONTROL:
-        exit_code = await proc.wait()
-        if exit_code != 0:
-            state.console.print(f"exit_code != 0 on {player1} vs {player2} on {map}")
-            outcome = Outcome.ERROR
+    exit_code = await proc.wait()
+    if outcome is None and exit_code != 0:
+        state.console.print(f"exit_code != 0 on {player1} vs {player2} on {map}")
+        outcome = Outcome.ERROR
 
     state.matches.append(Match(player1, player2, map, winner, rounds, outcome))
     print_results(state)
