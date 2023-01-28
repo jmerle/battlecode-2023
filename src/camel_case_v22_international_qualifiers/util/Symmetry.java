@@ -1,4 +1,4 @@
-package camel_case_v22.util;
+package camel_case_v22_international_qualifiers.util;
 
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

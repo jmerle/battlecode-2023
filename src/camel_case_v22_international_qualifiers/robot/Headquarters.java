@@ -1,4 +1,4 @@
-package camel_case_v22.robot;
+package camel_case_v22_international_qualifiers.robot;
 
 import battlecode.common.Anchor;
 import battlecode.common.GameActionException;
