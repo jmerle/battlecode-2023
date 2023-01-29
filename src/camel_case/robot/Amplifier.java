@@ -11,6 +11,8 @@ public class Amplifier extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        super.run();
+
         tryWander();
     }
 }

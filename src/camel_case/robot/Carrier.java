@@ -23,7 +23,6 @@ import java.util.Map;
 public class Carrier extends Unit {
     private Map<MapLocation, WellInfo> wells = new HashMap<>();
 
-    private MapLocation hqLocation = null;
     private boolean isCollecting = true;
 
     private MapLocationSet hasSeen = new MapLocationSet();
@@ -42,14 +41,7 @@ public class Carrier extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        if (hqLocation == null) {
-            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
-                if (robot.type == RobotType.HEADQUARTERS) {
-                    hqLocation = robot.location;
-                    break;
-                }
-            }
-        }
+        super.run();
 
         if (!lookingForWell) {
             if (islandLocations == null) {

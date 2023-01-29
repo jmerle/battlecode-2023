@@ -11,6 +11,8 @@ import battlecode.common.RobotType;
 import camel_case.util.RandomUtils;
 
 public abstract class Unit extends Robot {
+    protected MapLocation hqLocation;
+
     private MapLocation currentTarget;
     private boolean isWallFollowing;
     private int distanceBeforeWallFollowing;
@@ -24,6 +26,22 @@ public abstract class Unit extends Robot {
 
     public Unit(RobotController rc, RobotType type) {
         super(rc, type);
+    }
+
+    @Override
+    public void run() throws GameActionException {
+        if (hqLocation == null) {
+            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
+                if (robot.type == RobotType.HEADQUARTERS) {
+                    hqLocation = robot.location;
+                    break;
+                }
+            }
+
+            if (hqLocation == null) {
+                hqLocation = sharedArray.getMyHqLocation(0);
+            }
+        }
     }
 
     protected RobotInfo getAttackTarget(int radius) throws GameActionException {

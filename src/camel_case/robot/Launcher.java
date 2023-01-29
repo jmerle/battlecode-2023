@@ -22,27 +22,18 @@ public class Launcher extends Unit {
     private List<MapLocation> opponentHqs;
     private int opponentHqIndex;
 
-    private MapLocation hqLocation;
-
     public Launcher(RobotController rc) {
         super(rc, RobotType.LAUNCHER);
     }
 
     @Override
     public void run() throws GameActionException {
+        super.run();
+
         if (opponentHqs == null) {
             findOpponentHqs();
         } else {
             pruneOpponentHqs();
-        }
-
-        if (hqLocation == null) {
-            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, myTeam)) {
-                if (robot.type == RobotType.HEADQUARTERS) {
-                    hqLocation = robot.location;
-                    break;
-                }
-            }
         }
 
         act();
@@ -77,20 +68,19 @@ public class Launcher extends Unit {
             return;
         }
 
-        MapLocation hq = hqLocation != null ? hqLocation : sharedArray.getMyHqLocation(0);
-        int distanceToHq = hq.distanceSquaredTo(rc.getLocation());
+        int distanceToHq = hqLocation.distanceSquaredTo(rc.getLocation());
 
         if (rc.senseCloud(rc.getLocation())) {
             for (int[] dxdy : RANGE_5_TO_16) {
                 MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
-                if (hq.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                if (hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
                     return;
                 }
             }
         } else {
             for (int[] dxdy : RANGE_5_TO_16) {
                 MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
-                if (rc.senseCloud(location) && hq.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                if (rc.senseCloud(location) && hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
                     return;
                 }
             }
