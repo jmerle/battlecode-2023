@@ -77,19 +77,20 @@ public class Launcher extends Unit {
             return;
         }
 
-        int distanceToHq = hqLocation.distanceSquaredTo(rc.getLocation());
+        MapLocation hq = hqLocation != null ? hqLocation : sharedArray.getMyHqLocation(0);
+        int distanceToHq = hq.distanceSquaredTo(rc.getLocation());
 
         if (rc.senseCloud(rc.getLocation())) {
             for (int[] dxdy : RANGE_5_TO_16) {
                 MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
-                if (hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                if (hq.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
                     return;
                 }
             }
         } else {
             for (int[] dxdy : RANGE_5_TO_16) {
                 MapLocation location = rc.getLocation().translate(dxdy[0], dxdy[1]);
-                if (rc.senseCloud(location) && hqLocation.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
+                if (rc.senseCloud(location) && hq.distanceSquaredTo(location) > distanceToHq && tryAttack(location)) {
                     return;
                 }
             }

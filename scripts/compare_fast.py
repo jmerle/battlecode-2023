@@ -325,6 +325,23 @@ async def run(player1: str, player2: str) -> None:
         "SweetDreams",
         "TicTacToe",
         "USA",
+
+        # International Qualifiers
+        "Barcode",
+        "Contraction",
+        "Flower",
+        "Grapes",
+        "IslandHopping",
+        "Marsh",
+        "RaceToTheTop",
+        "Repetition",
+        "River",
+        "RockWall",
+        "Sakura",
+        "SoundWave",
+        "ThirtyFive",
+        "TimesUp",
+        "TreasureMap",
     ]
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

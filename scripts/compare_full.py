@@ -140,6 +140,23 @@ def main() -> None:
         "SweetDreams",
         "TicTacToe",
         "USA",
+
+        # International Qualifiers
+        "Barcode",
+        "Contraction",
+        "Flower",
+        "Grapes",
+        "IslandHopping",
+        "Marsh",
+        "RaceToTheTop",
+        "Repetition",
+        "River",
+        "RockWall",
+        "Sakura",
+        "SoundWave",
+        "ThirtyFive",
+        "TimesUp",
+        "TreasureMap",
     ]
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
