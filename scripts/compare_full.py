@@ -83,11 +83,11 @@ def main() -> None:
         "SmallElements",
 
         # Default batch 2
-        "Turtle",
         "Dreamy",
         "Forest",
         "PairedProgramming",
         "Rewind",
+        "Turtle",
 
         # Sprint 1
         "ArtistRendition",
@@ -157,7 +157,28 @@ def main() -> None:
         "ThirtyFive",
         "TimesUp",
         "TreasureMap",
+
+        # US Qualifiers
+        "AbsoluteW",
+        "Buggy",
+        "Cave",
+        "Cee",
+        "Heart",
+        "HotAirBalloon",
+        "IslandHoppingTwo",
+        "LightWork",
+        "MassiveL",
+        "Potions",
+        "Rainbow",
+        "Resign",
+        "Sneaky",
+        "Target",
+        "Tightrope",
     ]
+
+    build_proc = subprocess.run([str(Path(__file__).parent.parent / "gradlew"), "build"])
+    if build_proc.returncode != 0:
+        sys.exit(1)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 

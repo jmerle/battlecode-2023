@@ -3,7 +3,6 @@ package camel_case.robot;
 import battlecode.common.Anchor;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
@@ -21,7 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Carrier extends Unit {
-    private Map<MapLocation, WellInfo> wells = new HashMap<>();
+    private Map<MapLocation, ResourceType> wells = new HashMap<>();
+    private MapLocationSet sharedWells = new MapLocationSet();
 
     private boolean isCollecting = true;
 
@@ -42,8 +42,29 @@ public class Carrier extends Unit {
     @Override
     public void run() throws GameActionException {
         super.run();
+        for (MapLocation location : sharedArray.getManaWellLocations(hqLocation)) {
+            if (!sharedWells.contains(location)) {
+                wells.put(location, ResourceType.MANA);
+                sharedWells.add(location);
+            }
+        }
 
         if (!lookingForWell) {
+            if (sharedArray.canWrite()) {
+                for (Map.Entry<MapLocation, ResourceType> entry : wells.entrySet()) {
+                    ResourceType resource = entry.getValue();
+                    if (resource != ResourceType.MANA) {
+                        continue;
+                    }
+
+                    MapLocation location = entry.getKey();
+                    if (!sharedWells.contains(location)) {
+                        sharedArray.setManaWellLocation(hqLocation, location);
+                        sharedWells.add(location);
+                    }
+                }
+            }
+
             if (islandLocations == null) {
                 islandLocations = new MapLocation[rc.getIslandCount()];
                 blockedIslands = new boolean[islandLocations.length];
@@ -54,10 +75,7 @@ public class Carrier extends Unit {
                     continue;
                 }
 
-                MapLocation location = rc.senseNearbyIslandLocations(islandId)[0];
-                if (isReachable(location)) {
-                    islandLocations[islandId - 1] = location;
-                }
+                islandLocations[islandId - 1] = rc.senseNearbyIslandLocations(islandId)[0];
             }
         }
 
@@ -69,12 +87,9 @@ public class Carrier extends Unit {
                 }
 
                 int newDistanceToHq = rc.getLocation().distanceSquaredTo(robot.location);
-                if (newDistanceToHq + 50 > distanceToHq) {
-                    continue;
-                }
-
-                if (isReachable(robot.location)) {
+                if (newDistanceToHq + 50 <= distanceToHq) {
                     hqLocation = robot.location;
+                    distanceToHq = newDistanceToHq;
                 }
             }
         }
@@ -92,6 +107,20 @@ public class Carrier extends Unit {
 
         act();
         act();
+
+        if (!lookingForWell) {
+            for (WellInfo well : rc.senseNearbyWells(2, ResourceType.MANA)) {
+                if (tryCollectResource(well.getMapLocation(), -1)) {
+                    return;
+                }
+            }
+
+            for (WellInfo well : rc.senseNearbyWells(2, ResourceType.ADAMANTIUM)) {
+                if (tryCollectResource(well.getMapLocation(), -1)) {
+                    return;
+                }
+            }
+        }
     }
 
     private void act() throws GameActionException {
@@ -160,41 +189,31 @@ public class Carrier extends Unit {
 
         if (!rc.getLocation().equals(previousLocation)) {
             for (WellInfo well : rc.senseNearbyWells()) {
-                MapLocation location = well.getMapLocation();
-                if (wells.containsKey(location)) {
-                    if (wells.get(location) == null && !isReachable(location)) {
-                        continue;
-                    }
-
-                    wells.put(location, well);
-                } else {
-                    wells.put(location, isReachable(location) ? well : null);
-                }
+                wells.put(well.getMapLocation(), well.getResourceType());
             }
 
             previousLocation = rc.getLocation();
         }
 
         if (isCollecting) {
-            WellInfo closestWell = null;
+            MapLocation bestWell = null;
             int minDistance = Integer.MAX_VALUE;
 
-            for (Map.Entry<MapLocation, WellInfo> entry : wells.entrySet()) {
-                WellInfo well = entry.getValue();
-                if (well == null || well.getResourceType() != resourceTarget) {
+            for (Map.Entry<MapLocation, ResourceType> entry : wells.entrySet()) {
+                if (entry.getValue() != resourceTarget) {
                     continue;
                 }
 
-                MapLocation location = well.getMapLocation();
+                MapLocation location = entry.getKey();
                 int distance = rc.getLocation().distanceSquaredTo(location);
 
-                if (closestWell == null || distance < minDistance) {
-                    closestWell = well;
+                if (distance < minDistance) {
+                    bestWell = location;
                     minDistance = distance;
                 }
             }
 
-            if (closestWell == null) {
+            if (bestWell == null) {
                 RobotPlayer.logBytecodeWarnings = false;
 
                 if (!hasMarkedFrom.contains(rc.getLocation())) {
@@ -207,7 +226,7 @@ public class Carrier extends Unit {
 
                 lookingForWell = true;
                 tryWander();
-            } else if (rc.getLocation().isAdjacentTo(closestWell.getMapLocation())) {
+            } else if (rc.getLocation().isAdjacentTo(bestWell)) {
                 Direction bestDirection = null;
                 int minDistanceToHq = rc.getLocation().distanceSquaredTo(hqLocation);
 
@@ -217,7 +236,7 @@ public class Carrier extends Unit {
                     }
 
                     MapLocation newLocation = rc.getLocation().add(direction);
-                    if (!newLocation.isAdjacentTo(closestWell.getMapLocation())) {
+                    if (!newLocation.isAdjacentTo(bestWell)) {
                         continue;
                     }
 
@@ -237,10 +256,10 @@ public class Carrier extends Unit {
                 }
 
                 lookingForWell = false;
-                tryCollectResource(closestWell.getMapLocation(), Math.min(closestWell.getRate(), cargoTarget - cargo));
+                tryCollectResource(bestWell, -1);
             } else {
                 lookingForWell = false;
-                tryMoveTo(closestWell.getMapLocation());
+                tryMoveTo(bestWell);
             }
         } else {
             if (rc.getLocation().isAdjacentTo(hqLocation)) {
@@ -269,16 +288,10 @@ public class Carrier extends Unit {
         List<MapLocation> beacons = new ArrayList<>();
 
         boolean foundWell = false;
-        for (Map.Entry<MapLocation, WellInfo> entry : wells.entrySet()) {
-            WellInfo well = entry.getValue();
-            if (well == null) {
+        for (Map.Entry<MapLocation, ResourceType> entry : wells.entrySet()) {
+            if (entry.getValue() == ResourceType.ADAMANTIUM) {
                 foundWell = true;
-                continue;
-            }
-
-            if (well.getResourceType() == ResourceType.ADAMANTIUM) {
-                foundWell = true;
-                beacons.add(well.getMapLocation());
+                beacons.add(entry.getKey());
             }
         }
 
@@ -312,25 +325,6 @@ public class Carrier extends Unit {
         }
 
         return target;
-    }
-
-    private boolean isReachable(MapLocation location) throws GameActionException {
-        MapLocation myLocation = rc.getLocation();
-
-        while (!myLocation.equals(location)) {
-            myLocation = myLocation.add(directionTowards(myLocation, location));
-
-            if (!rc.onTheMap(myLocation) || !rc.canSenseLocation(myLocation)) {
-                return false;
-            }
-
-            MapInfo mapInfo = rc.senseMapInfo(myLocation);
-            if (!mapInfo.isPassable() || mapInfo.getCurrentDirection() != Direction.CENTER) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private boolean tryCollectResource(MapLocation location, int amount) throws GameActionException {

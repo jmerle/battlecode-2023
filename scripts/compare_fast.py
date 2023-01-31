@@ -268,11 +268,11 @@ async def run(player1: str, player2: str) -> None:
         "SmallElements",
 
         # Default batch 2
-        "Turtle",
         "Dreamy",
         "Forest",
         "PairedProgramming",
         "Rewind",
+        "Turtle",
 
         # Sprint 1
         "ArtistRendition",
@@ -342,7 +342,29 @@ async def run(player1: str, player2: str) -> None:
         "ThirtyFive",
         "TimesUp",
         "TreasureMap",
+
+        # US Qualifiers
+        "AbsoluteW",
+        "Buggy",
+        "Cave",
+        "Cee",
+        "Heart",
+        "HotAirBalloon",
+        "IslandHoppingTwo",
+        "LightWork",
+        "MassiveL",
+        "Potions",
+        "Rainbow",
+        "Resign",
+        "Sneaky",
+        "Target",
+        "Tightrope",
     ]
+
+    build_proc = await asyncio.subprocess.create_subprocess_exec(str(Path(__file__).parent.parent / "gradlew"), "build")
+    build_exit_code = await build_proc.wait()
+    if build_exit_code != 0:
+        return
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     semaphore = asyncio.Semaphore(4)

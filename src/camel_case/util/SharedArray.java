@@ -5,10 +5,13 @@ import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
-public class SharedArray {
-    public static final int MAX_DANGER_TARGETS = 20;
+import java.util.ArrayList;
+import java.util.List;
 
+public class SharedArray {
     private static final int HQ_LOCATION_OFFSET = 1;
+    private static final int WELLS_OFFSET = HQ_LOCATION_OFFSET + GameConstants.MAX_STARTING_HEADQUARTERS;
+    private static final int MAX_WELLS_PER_HQ = 5;
 
     private RobotController rc;
 
@@ -51,12 +54,56 @@ public class SharedArray {
         write(HQ_LOCATION_OFFSET + hqIndex, locationToInt(location));
     }
 
+    public List<MapLocation> getManaWellLocations(MapLocation hqLocation) throws GameActionException {
+        List<MapLocation> wells = new ArrayList<>();
+
+        int hqIndex = hqLocationToIndex(hqLocation);
+        for (int i = 0; i < MAX_WELLS_PER_HQ; i++) {
+            int value = rc.readSharedArray(WELLS_OFFSET + hqIndex * GameConstants.MAX_STARTING_HEADQUARTERS + i);
+            if (value == 0) {
+                break;
+            }
+
+            wells.add(intToLocation(value));
+        }
+
+        return wells;
+    }
+
+    public void setManaWellLocation(MapLocation hqLocation, MapLocation well) throws GameActionException {
+        int hqIndex = hqLocationToIndex(hqLocation);
+
+        for (int i = 0; i < MAX_WELLS_PER_HQ; i++) {
+            int value = rc.readSharedArray(WELLS_OFFSET + hqIndex * GameConstants.MAX_STARTING_HEADQUARTERS + i);
+
+            if (value == 0) {
+                write(WELLS_OFFSET + hqIndex * GameConstants.MAX_STARTING_HEADQUARTERS + i, locationToInt(well));
+                break;
+            }
+
+            MapLocation location = intToLocation(value);
+            if (location.equals(well)) {
+                break;
+            }
+        }
+    }
+
     private int locationToInt(MapLocation location) {
         return (location.y * 60 + location.x) + 1;
     }
 
     private MapLocation intToLocation(int value) {
         return new MapLocation((value - 1) % 60, (value - 1) / 60);
+    }
+
+    private int hqLocationToIndex(MapLocation location) throws GameActionException {
+        for (int i = 0; i < GameConstants.MAX_STARTING_HEADQUARTERS; i++) {
+            if (getMyHqLocation(i).equals(location)) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void write(int index, int newValue) throws GameActionException {
