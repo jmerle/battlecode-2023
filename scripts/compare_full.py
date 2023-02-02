@@ -174,6 +174,24 @@ def main() -> None:
         "Sneaky",
         "Target",
         "Tightrope",
+
+        # Newbie Tournament and High School Tournament
+        "BuildSite",
+        "CrownJewels",
+        "Elephant",
+        "ExtremelyMid",
+        "FishCake",
+        "Fractured",
+        "LookingGlass",
+        "MoonPhases",
+        "Pillars",
+        "PipesAndParabolas",
+        "ReverseFunnel",
+        "Spiderweb",
+        "Spots",
+        "Swooshy",
+        "VeryReasonable",
+        "Zig",
     ]
 
     build_proc = subprocess.run([str(Path(__file__).parent.parent / "gradlew"), "build"])

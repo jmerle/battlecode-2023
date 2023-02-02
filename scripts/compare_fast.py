@@ -56,7 +56,7 @@ def cleanup(exit_code: int) -> None:
 def print_results(state: State) -> None:
     table = Table()
 
-    column_groups = 4
+    column_groups = 5
     for _ in range(column_groups):
         for name in ["Map", "As red", "As blue"]:
             table.add_column(name)
@@ -359,6 +359,24 @@ async def run(player1: str, player2: str) -> None:
         "Sneaky",
         "Target",
         "Tightrope",
+
+        # Newbie Tournament and High School Tournament
+        "BuildSite",
+        "CrownJewels",
+        "Elephant",
+        "ExtremelyMid",
+        "FishCake",
+        "Fractured",
+        "LookingGlass",
+        "MoonPhases",
+        "Pillars",
+        "PipesAndParabolas",
+        "ReverseFunnel",
+        "Spiderweb",
+        "Spots",
+        "Swooshy",
+        "VeryReasonable",
+        "Zig",
     ]
 
     build_proc = await asyncio.subprocess.create_subprocess_exec(str(Path(__file__).parent.parent / "gradlew"), "build")
