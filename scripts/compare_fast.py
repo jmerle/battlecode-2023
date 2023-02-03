@@ -379,7 +379,7 @@ async def run(player1: str, player2: str) -> None:
         "Zig",
     ]
 
-    build_proc = await asyncio.subprocess.create_subprocess_exec(str(Path(__file__).parent.parent / "gradlew"), "build")
+    build_proc = await asyncio.subprocess.create_subprocess_exec(str(Path(__file__).parent.parent / "gradlew"), "build", "-x", "checkForUpdates")
     build_exit_code = await build_proc.wait()
     if build_exit_code != 0:
         return

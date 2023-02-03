@@ -194,7 +194,7 @@ def main() -> None:
         "Zig",
     ]
 
-    build_proc = subprocess.run([str(Path(__file__).parent.parent / "gradlew"), "build"])
+    build_proc = subprocess.run([str(Path(__file__).parent.parent / "gradlew"), "build", "-x", "checkForUpdates"])
     if build_proc.returncode != 0:
         sys.exit(1)
 

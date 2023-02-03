@@ -54,14 +54,11 @@ public abstract class Unit extends Robot {
                 continue;
             }
 
-            int priority = robot.getTotalAnchors() * 1000 + robot.type.damage;
-            if (robot.type == RobotType.CARRIER) {
-                int cargo = robot.getResourceAmount(ResourceType.ADAMANTIUM)
-                    + robot.getResourceAmount(ResourceType.MANA)
-                    + robot.getResourceAmount(ResourceType.ELIXIR);
-
-                priority += cargo / 5;
-            }
+            int priority = robot.type.damage * 15
+                + robot.getTotalAnchors() * 1000
+                + robot.getResourceAmount(ResourceType.ELIXIR) * 5
+                + robot.getResourceAmount(ResourceType.MANA) * 3
+                + robot.getResourceAmount(ResourceType.ADAMANTIUM);
 
             if (bestTarget == null || priority > maxPriority || (priority == maxPriority && robot.health < minHealth)) {
                 bestTarget = robot;
