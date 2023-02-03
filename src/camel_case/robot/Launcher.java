@@ -93,6 +93,7 @@ public class Launcher extends Unit {
         // +----+----+
         // | Q3 | Q4 |
         // +----+----+
+        // This logic is wrong, teams can have HQs on both sides of the symmetry, but fixing it causes worse performance
         boolean hqInQ1 = false;
         boolean hqInQ2 = false;
         boolean hqInQ3 = false;

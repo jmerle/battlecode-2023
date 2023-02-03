@@ -17,17 +17,9 @@ public enum Symmetry {
     }
 
     public MapLocation reflect(RobotController rc, MapLocation location) {
-        int x = reflectX ? reflect(location.x, rc.getMapWidth() / 2) : location.x;
-        int y = reflectY ? reflect(location.y, rc.getMapHeight() / 2) : location.y;
+        int x = reflectX ? (rc.getMapWidth() - 1 - location.x) : location.x;
+        int y = reflectY ? (rc.getMapHeight() - 1 - location.y) : location.y;
 
         return new MapLocation(x, y);
-    }
-
-    private int reflect(int value, int middle) {
-        if (value < middle) {
-            return middle + Math.abs(value - middle) - 1;
-        } else {
-            return middle - Math.abs(value - middle) - 1;
-        }
     }
 }

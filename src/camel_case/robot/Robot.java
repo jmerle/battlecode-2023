@@ -5,7 +5,6 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 import camel_case.util.SharedArray;
@@ -20,20 +19,20 @@ public abstract class Robot {
 
     protected Direction[] allDirections = Direction.values();
     protected Direction[] adjacentDirections = {
-            Direction.NORTH,
-            Direction.EAST,
-            Direction.SOUTH,
-            Direction.WEST,
-            Direction.NORTHEAST,
-            Direction.SOUTHEAST,
-            Direction.SOUTHWEST,
-            Direction.NORTHWEST
+        Direction.NORTH,
+        Direction.EAST,
+        Direction.SOUTH,
+        Direction.WEST,
+        Direction.NORTHEAST,
+        Direction.SOUTHEAST,
+        Direction.SOUTHWEST,
+        Direction.NORTHWEST
     };
 
     protected ResourceType[] resourceTypes = {
-            ResourceType.ADAMANTIUM,
-            ResourceType.MANA,
-            ResourceType.ELIXIR
+        ResourceType.ADAMANTIUM,
+        ResourceType.MANA,
+        ResourceType.ELIXIR
     };
 
     protected SharedArray sharedArray;

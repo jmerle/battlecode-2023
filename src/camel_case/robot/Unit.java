@@ -8,10 +8,20 @@ import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import camel_case.util.MapLocationSet;
 import camel_case.util.RandomUtils;
 
 public abstract class Unit extends Robot {
+    private static final int[][] RANGE16 = {
+        {0, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 0}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {-2, 0}, {0, -2}, {0, 2}, {2, 0},
+        {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1}, {-2, -2}, {-2, 2}, {2, -2}, {2, 2},
+        {-3, 0}, {0, -3}, {0, 3}, {3, 0}, {-3, -1}, {-3, 1}, {-1, -3}, {-1, 3}, {1, -3}, {1, 3}, {3, -1}, {3, 1},
+        {-3, -2}, {-3, 2}, {-2, -3}, {-2, 3}, {2, -3}, {2, 3}, {3, -2}, {3, 2}, {-4, 0}, {0, -4}, {0, 4}, {4, 0}
+    };
+
     protected MapLocation hqLocation;
+
+    private MapLocationSet dangerousLocations = new MapLocationSet();
 
     private MapLocation currentTarget;
     private boolean isWallFollowing;
@@ -40,6 +50,26 @@ public abstract class Unit extends Robot {
 
             if (hqLocation == null) {
                 hqLocation = sharedArray.getMyHqLocation(0);
+            }
+        }
+
+        if (rc.getMapWidth() * rc.getMapHeight() > 24 * 24) {
+            outer:
+            for (RobotInfo robot : rc.senseNearbyRobots(me.visionRadiusSquared, opponentTeam)) {
+                if (robot.type != RobotType.HEADQUARTERS || dangerousLocations.contains(robot.location)) {
+                    continue;
+                }
+
+                for (int i = sharedArray.getHqCount(); i-- > 0; ) {
+                    MapLocation hq = sharedArray.getMyHqLocation(i);
+                    if (hq.distanceSquaredTo(robot.location) <= RobotType.HEADQUARTERS.visionRadiusSquared) {
+                        continue outer;
+                    }
+                }
+
+                for (int[] dxdy : RANGE16) {
+                    dangerousLocations.add(robot.location.translate(dxdy[0], dxdy[1]));
+                }
             }
         }
     }
@@ -147,6 +177,15 @@ public abstract class Unit extends Robot {
         }
 
         turnsSpentMovingTowardsTarget++;
+
+        if (dangerousLocations.contains(rc.getLocation())) {
+            Direction safeDirection = directionTowards(hqLocation);
+            return tryMove(safeDirection)
+                || tryMove(safeDirection.rotateLeft())
+                || tryMove(safeDirection.rotateRight())
+                || tryMove(safeDirection.rotateLeft().rotateLeft())
+                || tryMove(safeDirection.rotateRight().rotateRight());
+        }
 
         if (isWallFollowing && currentDistance < distanceBeforeWallFollowing) {
             isWallFollowing = false;
@@ -275,8 +314,7 @@ public abstract class Unit extends Robot {
             return false;
         }
 
-        RobotInfo robotInfo = rc.senseRobotAtLocation(location);
-        return robotInfo == null || robotInfo.type != RobotType.HEADQUARTERS;
+        return !dangerousLocations.contains(location);
     }
 
     protected boolean tryMove(Direction direction) throws GameActionException {
