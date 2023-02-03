@@ -93,10 +93,6 @@ public abstract class Unit extends Robot {
             }
 
             MapLocation newLocation = rc.adjacentLocation(direction);
-            MapInfo mapInfo = rc.senseMapInfo(newLocation);
-            if (mapInfo.hasCloud() || mapInfo.getCurrentDirection() != Direction.CENTER) {
-                continue;
-            }
 
             int distance = 0;
             for (RobotInfo robot : opponentRobots) {
