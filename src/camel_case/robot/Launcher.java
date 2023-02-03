@@ -56,11 +56,45 @@ public class Launcher extends Unit {
             return;
         }
 
+        if (tryMoveToOpponentIsland()) {
+            return;
+        }
+
         if (tryMoveToOpponentHq()) {
             return;
         }
 
         tryWander();
+    }
+
+    private boolean tryMoveToOpponentIsland() throws GameActionException {
+        for (int islandId : rc.senseNearbyIslands()) {
+            if (rc.senseTeamOccupyingIsland(islandId) != opponentTeam) {
+                continue;
+            }
+
+            MapLocation bestLocation = null;
+            int minDistance = Integer.MAX_VALUE;
+
+            for (MapLocation location : rc.senseNearbyIslandLocations(islandId)) {
+                if (rc.senseRobotAtLocation(location) != null) {
+                    continue;
+                }
+
+                int distance = rc.getLocation().distanceSquaredTo(location);
+                if (distance < minDistance) {
+                    bestLocation = location;
+                    minDistance = distance;
+                }
+            }
+
+            if (bestLocation != null) {
+                tryMoveTo(bestLocation);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void tryBlindAttack() throws GameActionException {
