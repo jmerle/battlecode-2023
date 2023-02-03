@@ -140,9 +140,14 @@ public class Carrier extends Unit {
 
             if (rc.getNumAnchors(Anchor.STANDARD) > 0) {
                 int currentIslandId = rc.senseIsland(rc.getLocation());
-                if (currentIslandId != -1 && rc.senseTeamOccupyingIsland(currentIslandId) == Team.NEUTRAL) {
-                    tryPlaceAnchor();
-                    return;
+                if (currentIslandId != -1) {
+                    Team currentTeam = rc.senseTeamOccupyingIsland(currentIslandId);
+                    if (currentTeam == Team.NEUTRAL) {
+                        tryPlaceAnchor();
+                        return;
+                    } else if (currentTeam == opponentTeam) {
+                        return;
+                    }
                 }
 
                 MapLocation closestIsland = null;
@@ -158,7 +163,7 @@ public class Carrier extends Unit {
                         continue;
                     }
 
-                    if (rc.canSenseLocation(location) && rc.senseTeamOccupyingIsland(i + 1) != Team.NEUTRAL) {
+                    if (rc.canSenseLocation(location) && rc.senseTeamOccupyingIsland(i + 1) == myTeam) {
                         blockedIslands[i] = true;
                         continue;
                     }
