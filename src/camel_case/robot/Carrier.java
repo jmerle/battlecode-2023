@@ -219,8 +219,6 @@ public class Carrier extends Unit {
             }
 
             if (bestWell == null) {
-                RobotPlayer.logBytecodeWarnings = false;
-
                 if (!hasMarkedFrom.contains(rc.getLocation())) {
                     for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), me.visionRadiusSquared)) {
                         hasSeen.add(location);

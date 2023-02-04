@@ -12,8 +12,6 @@ import camel_case.robot.Robot;
 
 @SuppressWarnings("unused")
 public class RobotPlayer {
-    public static boolean logBytecodeWarnings = true;
-
     public static void run(RobotController rc) {
         Robot robot = createRobot(rc);
 
@@ -30,8 +28,6 @@ public class RobotPlayer {
     }
 
     private static boolean performTurn(RobotController rc, Robot robot) {
-        logBytecodeWarnings = true;
-
         int startRound = rc.getRoundNum();
         int startBytecodes = Clock.getBytecodeNum();
 
@@ -51,11 +47,6 @@ public class RobotPlayer {
             : (maxBytecodes - startBytecodes) + Math.max(0, endRound - startRound - 1) * maxBytecodes + endBytecodes;
 
         double bytecodePercentage = (double) usedBytecodes / (double) maxBytecodes * 100.0;
-        if (bytecodePercentage >= 95 && logBytecodeWarnings) {
-            String format = "High bytecode usage!\n%s/%s (%s%%)\n";
-            System.out.printf(format, usedBytecodes, maxBytecodes, (int) Math.round(bytecodePercentage));
-        }
-
         return bytecodePercentage < 100;
     }
 
