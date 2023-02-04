@@ -1,4 +1,4 @@
-package camel_case_v29_final.robot;
+package camel_case_v29.robot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -8,8 +8,8 @@ import battlecode.common.ResourceType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import camel_case_v29_final.util.MapLocationSet;
-import camel_case_v29_final.util.RandomUtils;
+import camel_case_v29.util.MapLocationSet;
+import camel_case_v29.util.RandomUtils;
 
 public abstract class Unit extends Robot {
     private static final int[][] RANGE16 = {

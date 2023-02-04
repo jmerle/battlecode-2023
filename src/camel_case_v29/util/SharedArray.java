@@ -1,4 +1,4 @@
-package camel_case_v29_final.util;
+package camel_case_v29.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;

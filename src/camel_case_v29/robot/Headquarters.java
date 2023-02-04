@@ -1,4 +1,4 @@
-package camel_case_v29_final.robot;
+package camel_case_v29.robot;
 
 import battlecode.common.Anchor;
 import battlecode.common.GameActionException;

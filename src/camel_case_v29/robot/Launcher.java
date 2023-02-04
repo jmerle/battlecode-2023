@@ -1,11 +1,11 @@
-package camel_case_v29_final.robot;
+package camel_case_v29.robot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import camel_case_v29_final.util.Symmetry;
+import camel_case_v29.util.Symmetry;
 
 import java.util.ArrayList;
 import java.util.Comparator;

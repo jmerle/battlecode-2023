@@ -1,14 +1,14 @@
-package camel_case_v29_final;
+package camel_case_v29;
 
 import battlecode.common.Clock;
 import battlecode.common.RobotController;
-import camel_case_v29_final.robot.Amplifier;
-import camel_case_v29_final.robot.Booster;
-import camel_case_v29_final.robot.Carrier;
-import camel_case_v29_final.robot.Destabilizer;
-import camel_case_v29_final.robot.Headquarters;
-import camel_case_v29_final.robot.Launcher;
-import camel_case_v29_final.robot.Robot;
+import camel_case_v29.robot.Amplifier;
+import camel_case_v29.robot.Booster;
+import camel_case_v29.robot.Carrier;
+import camel_case_v29.robot.Destabilizer;
+import camel_case_v29.robot.Headquarters;
+import camel_case_v29.robot.Launcher;
+import camel_case_v29.robot.Robot;
 
 @SuppressWarnings("unused")
 public class RobotPlayer {

@@ -1,4 +1,4 @@
-package camel_case_v29_final.robot;
+package camel_case_v29.robot;
 
 import battlecode.common.Anchor;
 import battlecode.common.Direction;
@@ -10,9 +10,9 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.WellInfo;
-import camel_case_v29_final.RobotPlayer;
-import camel_case_v29_final.util.MapLocationSet;
-import camel_case_v29_final.util.RandomUtils;
+import camel_case_v29.RobotPlayer;
+import camel_case_v29.util.MapLocationSet;
+import camel_case_v29.util.RandomUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
